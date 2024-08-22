@@ -33,10 +33,14 @@ int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
     StmtID id;
 }
 
+%token TOK_PLUS      "+"
+%token TOK_STAR      "*"
+%token TOK_EQUAL     "="
+%token TOK_LPAREN    "("
+%token TOK_RPAREN    ")"
+%token TOK_SEMICOLON ";"
 %token TOK_RETURN TOK_VOID TOK_BOOL TOK_INT
-%token TOK_LPAREN TOK_RPAREN TOK_SEMICOLON
 %token TOK_TRUE TOK_FALSE
-%token TOK_PLUS TOK_STAR TOK_EQUAL
 %token <str> TOK_IDENT
 %token <num> TOK_NUM
 
