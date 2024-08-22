@@ -72,4 +72,5 @@ expr
 
 int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg) {
     fprintf(stderr, "error: %s\n", msg);
+    return 1;
 }
