@@ -8,7 +8,6 @@
 #include "parser.h"
 #include "lexer.h"
 
-// reference the implementation provided in Lexer.l
 int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
 
 %}
@@ -21,28 +20,26 @@ int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
 %defines "include/parser.h"
 
 %define api.pure
+%define api.value.type union
+%define parse.trace
 %lex-param   { yyscan_t scanner }
 // %parse-param { SExpression **expression }
 %parse-param { NodePool pool    }
 %parse-param { StmtID   *root   }
 %parse-param { yyscan_t scanner }
 
-%union {
-    int64_t num;
-    const char *str;
-    StmtID id;
-}
-
+%token TOK_MAIN TOK_RETURN TOK_VOID TOK_BOOL TOK_INT
+%token TOK_TRUE TOK_FALSE
 %token TOK_PLUS      "+"
 %token TOK_STAR      "*"
 %token TOK_EQUAL     "="
 %token TOK_LPAREN    "("
 %token TOK_RPAREN    ")"
+%token TOK_LCURLY    "{"
+%token TOK_RCURLY    "}"
 %token TOK_SEMICOLON ";"
-%token TOK_RETURN TOK_VOID TOK_BOOL TOK_INT
-%token TOK_TRUE TOK_FALSE
-%token <str> TOK_IDENT
-%token <num> TOK_NUM
+%token <const char*> TOK_IDENT
+%token <int64_t> TOK_NUM
 
 %type <id> expr
 
@@ -71,6 +68,8 @@ expr
 %%
 
 int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg) {
+    (void) pool, (void) root, (void) scanner;
+
     fprintf(stderr, "error: %s\n", msg);
     return 1;
 }

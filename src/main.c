@@ -5,6 +5,7 @@
 #include "lexer.h"
 
 int main(int argc, char *argv[]) {
+    // yydebug = 1;
     NodePool pool = pool_initialize();
     ExprID root = NO_ID;
 
@@ -13,14 +14,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    YY_BUFFER_STATE state = yy_scan_string(argv[1], scanner);
+    // YY_BUFFER_STATE state = yy_scan_string(argv[1], scanner);
 
     if (yyparse(pool, &root, scanner)) {
         /* error parsing */
         return 1;
     }
 
-    yy_delete_buffer(state, scanner);
+    // yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
 
     pool_display(pool, root, stdout);
@@ -45,3 +46,4 @@ int main(int argc, char *argv[]) {
     pool_release(pool);
     */
 }
+

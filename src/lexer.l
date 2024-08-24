@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "ast.h"
+#include "util.h"
 #include "parser.h"
 
 %}
@@ -21,8 +22,8 @@ IDENT      [a-zA-Z][a-zA-Z0-9]*
 %%
 
 {WHITESPACE}* { continue; }
-{DIGIT}+      { yylval->num = atoll(yytext); return TOK_NUM; }
 
+"main"   { return TOK_MAIN; }
 "return" { return TOK_RETURN; }
 "void"   { return TOK_VOID; }
 "bool"   { return TOK_BOOL; }
@@ -31,14 +32,17 @@ IDENT      [a-zA-Z][a-zA-Z0-9]*
 "true"   { return TOK_TRUE; }
 "false"  { return TOK_FALSE; }
 
-{IDENT}  { yylval->str = yytext; return TOK_IDENT; }
-
 "*" { return TOK_STAR; }
 "+" { return TOK_PLUS; }
 "=" { return TOK_EQUAL; }
 "(" { return TOK_LPAREN; }
 ")" { return TOK_RPAREN; }
+"{" { return TOK_LCURLY; }
+"}" { return TOK_RCURLY; }
 ";" { return TOK_SEMICOLON; }
+
+{IDENT}  { yylval->TOK_IDENT = u_strdup(yytext); return TOK_IDENT; }
+{DIGIT}+ { yylval->TOK_NUM = atoll(yytext); return TOK_NUM; }
 
 %%
 
