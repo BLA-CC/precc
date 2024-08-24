@@ -10,6 +10,8 @@
 
 int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
 
+StmtID last_stmt = NO_ID;
+
 %}
 
 %code requires {
@@ -41,7 +43,12 @@ int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
 %token <const char*> TOK_IDENT
 %token <int64_t> TOK_NUM
 
-%type <id> expr
+%type <StmtID> seq
+%type <StmtID> stmt
+%type <StmtID> decl
+%type <StmtID> asgn
+%type <StmtID> retn
+%type <ExprID> expr
 
 /* Precedence (increasing) and associativity:
    a+b+c is (a+b)+c: left associativity
@@ -51,9 +58,27 @@ int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
 
 %%
 
-input
-    : expr { *root = $1; }
+input: main_type TOK_MAIN "(" ")" "{" seq[body] "}" { *root = $body; }
+
+main_type: TOK_VOID | TOK_BOOL | TOK_INT
+
+seq
+    : /* empty */ { $$ = NO_ID; }
+    | seq stmt { $$ = $1 == NO_ID ? $2 : $1; }
     ;
+
+stmt: decl | asgn | retn;
+
+decl
+    : TOK_BOOL TOK_IDENT ";" { $$ = pool_declaration(pool, NO_ID, Type_BOOL, $2); last_stmt = $$; }
+    | TOK_INT TOK_IDENT ";"  { $$ = pool_declaration(pool, last_stmt, Type_INT, $2); last_stmt = $$; }
+    ;
+
+asgn: TOK_IDENT "=" expr ";" { $$ = pool_assignment(pool, last_stmt, $1, $3); last_stmt = $$; };
+
+retn
+    : TOK_RETURN ";"      { $$ = pool_ret(pool, last_stmt, NO_ID); last_stmt = $$; }
+    | TOK_RETURN expr ";" { $$ = pool_ret(pool, last_stmt, $2); last_stmt = $$; }
 
 expr
     : expr[L] "+" expr[R] { $$ = pool_binary(pool, $L, $R, BinaryOp_ADD); }
