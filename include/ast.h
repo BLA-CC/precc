@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "defs.h"
+#include "str_pool.h"
 
 #define NO_ID UINT32_MAX
 
@@ -29,7 +30,7 @@ typedef enum {
 } ExpressionKind;
 
 typedef union {
-    char *var;
+    StrID var;
     bool bool_constant;
     int64_t int_constant;
 
@@ -61,12 +62,12 @@ typedef union {
     ExprID ret_val;
 
     struct {
-        char *ident;
+        StrID ident;
         Type type;
     } declaration;
 
     struct {
-        char *ident;
+        StrID ident;
         ExprID expr;
     } assignment;
 } StatementData;
@@ -113,7 +114,7 @@ StmtID pool_ret(NodePool self, StmtID prev, ExprID expr);
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
 StmtID
-pool_declaration(NodePool self, StmtID prev, Type type, const char *ident);
+pool_declaration(NodePool self, StmtID prev, Type type, StrID ident);
 
 /**
  * @brief Push an 'assignment' Statement into the pool
@@ -125,7 +126,7 @@ pool_declaration(NodePool self, StmtID prev, Type type, const char *ident);
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
 StmtID
-pool_assignment(NodePool self, StmtID prev, const char *ident, ExprID expr);
+pool_assignment(NodePool self, StmtID prev, StrID ident, ExprID expr);
 
 /**
  * @brief Push an 'integer constant' Expression into the pool
@@ -152,7 +153,7 @@ ExprID pool_bool_constant(NodePool self, bool constant);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID pool_var(NodePool self, const char *var);
+ExprID pool_var(NodePool self, StrID var);
 
 /**
  * @brief Push a 'binary' Statement into the pool
@@ -189,7 +190,7 @@ const Expression *pool_get_expr(const NodePool self, ExprID id);
  * @param[in] root - ID of a valid Statement or Expression from the pool
  * @param[in] stream - Output handle to print the AST
  */
-void pool_display(const NodePool self, NodeID root, FILE *stream);
+void pool_display(const NodePool self, NodeID root, StrPool strs, FILE *stream);
 
 #ifdef __cplusplus
 }

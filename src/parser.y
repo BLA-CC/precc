@@ -7,6 +7,7 @@
 #include "ast.h"
 #include "parser.h"
 #include "lexer.h"
+#include "str_pool.h"
 
 int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
 
@@ -24,11 +25,10 @@ StmtID last_stmt = NO_ID;
 %define api.pure
 %define api.value.type union
 %define parse.trace
-%lex-param   { yyscan_t scanner }
-// %parse-param { SExpression **expression }
 %parse-param { NodePool pool    }
 %parse-param { StmtID   *root   }
-%parse-param { yyscan_t scanner }
+
+%param { yyscan_t scanner }
 
 %token TOK_MAIN TOK_RETURN TOK_VOID TOK_BOOL TOK_INT
 %token TOK_TRUE TOK_FALSE
@@ -40,7 +40,7 @@ StmtID last_stmt = NO_ID;
 %token TOK_LCURLY    "{"
 %token TOK_RCURLY    "}"
 %token TOK_SEMICOLON ";"
-%token <const char*> TOK_IDENT
+%token <StrID> TOK_IDENT
 %token <int64_t> TOK_NUM
 
 %type <StmtID> seq
@@ -70,7 +70,7 @@ seq
 stmt: decl | asgn | retn;
 
 decl
-    : TOK_BOOL TOK_IDENT ";" { $$ = pool_declaration(pool, NO_ID, Type_BOOL, $2); last_stmt = $$; }
+    : TOK_BOOL TOK_IDENT ";" { $$ = pool_declaration(pool, last_stmt, Type_BOOL, $2); last_stmt = $$; }
     | TOK_INT TOK_IDENT ";"  { $$ = pool_declaration(pool, last_stmt, Type_INT, $2); last_stmt = $$; }
     ;
 

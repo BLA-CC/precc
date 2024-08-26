@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util.h"
-
 #define DEFAULT_CAPACITY 64
 
 typedef enum {
@@ -43,51 +41,9 @@ NodePool pool_initialize() {
     return self;
 }
 
-static void _expr_release(Expression *expr) {
-    switch (expr->kind) {
-    case ExpressionKind_VAR:
-        free(expr->data.var);
-        break;
-
-    default:
-        break;
-    }
-}
-
-static void _stmt_release(Statement *stmt) {
-    switch (stmt->kind) {
-    case StatementKind_DECLARATION:
-        free(stmt->data.declaration.ident);
-        break;
-
-    case StatementKind_ASSIGNMENT:
-        free(stmt->data.assignment.ident);
-        break;
-
-    default:
-        break;
-    }
-}
-
-static void _entry_release(PoolEntry *entry) {
-    switch (entry->kind) {
-    case PoolEntryKind_Expression:
-        _expr_release(&entry->data.expr);
-        break;
-
-    case PoolEntryKind_Statement:
-        _stmt_release(&entry->data.stmt);
-        break;
-    }
-}
-
 void pool_release(NodePool self) {
     if (self == NULL) {
         return;
-    }
-
-    for (size_t i = 0; i < self->size; ++i) {
-        _entry_release(&self->entries[i]);
     }
 
     free(self->entries);
@@ -162,19 +118,13 @@ StmtID pool_ret(NodePool self, StmtID prev, ExprID expr) {
 }
 
 StmtID
-pool_declaration(NodePool self, StmtID prev, Type type, const char *ident) {
-    char *var_name = u_strdup(ident);
-
-    if (var_name == NULL) {
-        return NO_ID;
-    }
-
+pool_declaration(NodePool self, StmtID prev, Type type, StrID ident) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
             .kind = StatementKind_DECLARATION,
             .data = { .declaration = {
-                .ident = var_name,
+                .ident = ident,
                 .type = type,
             } },
             .next = NO_ID,
@@ -191,19 +141,13 @@ pool_declaration(NodePool self, StmtID prev, Type type, const char *ident) {
 }
 
 StmtID
-pool_assignment(NodePool self, StmtID prev, const char *ident, ExprID expr) {
-    char *var_name = u_strdup(ident);
-
-    if (var_name == NULL) {
-        return NO_ID;
-    }
-
+pool_assignment(NodePool self, StmtID prev, StrID ident, ExprID expr) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
             .kind = StatementKind_ASSIGNMENT,
             .data = { .assignment = {
-                .ident = var_name,
+                .ident = ident,
                 .expr = expr,
             } },
             .next = NO_ID,
@@ -245,18 +189,12 @@ ExprID pool_bool_constant(NodePool self, bool constant) {
     return node_id;
 }
 
-ExprID pool_var(NodePool self, const char *var) {
-    char *var_name = u_strdup(var);
-
-    if (var_name == NULL) {
-        return NO_ID;
-    }
-
+ExprID pool_var(NodePool self, StrID var) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Expression,
         .data = { .expr = {
             .kind = ExpressionKind_VAR,
-            .data = { .var = var_name },
+            .data = { .var = var },
         } },
     };
 
@@ -345,7 +283,7 @@ static const char *_str_bool(bool val) {
     }
 }
 
-static void _pool_display_expr(const NodePool self, ExprID root, FILE *stream) {
+static void _pool_display_expr(const NodePool self, ExprID root, const StrPool strs, FILE *stream) {
     const Expression *expr = pool_get_expr(self, root);
 
     if (expr == NULL) {
@@ -362,14 +300,14 @@ static void _pool_display_expr(const NodePool self, ExprID root, FILE *stream) {
         break;
 
     case ExpressionKind_VAR:
-        fprintf(stream, "%s", expr->data.var);
+        fprintf(stream, "%s", str_pool_get(strs, expr->data.var));
         break;
 
     case ExpressionKind_BINARY:
         fprintf(stream, "(");
-        _pool_display_expr(self, expr->data.binary.lhs, stream);
+        _pool_display_expr(self, expr->data.binary.lhs, strs, stream);
         fprintf(stream, " %s ", _str_bin_op(expr->data.binary.op));
-        _pool_display_expr(self, expr->data.binary.rhs, stream);
+        _pool_display_expr(self, expr->data.binary.rhs, strs, stream);
         fprintf(stream, ")");
         break;
 
@@ -378,7 +316,7 @@ static void _pool_display_expr(const NodePool self, ExprID root, FILE *stream) {
     }
 }
 
-static void _pool_display_stmt(const NodePool self, StmtID root, FILE *stream) {
+static void _pool_display_stmt(const NodePool self, StmtID root, StrPool strs, FILE *stream) {
     while (root != NO_ID) {
         const Statement *stmt = pool_get_stmt(self, root);
 
@@ -392,19 +330,19 @@ static void _pool_display_stmt(const NodePool self, StmtID root, FILE *stream) {
                 stream,
                 "%s %s",
                 _str_type(stmt->data.declaration.type),
-                stmt->data.declaration.ident);
+                str_pool_get(strs, stmt->data.declaration.ident));
             break;
 
         case StatementKind_ASSIGNMENT:
-            fprintf(stream, "%s = ", stmt->data.assignment.ident);
-            _pool_display_expr(self, stmt->data.assignment.expr, stream);
+            fprintf(stream, "%s = ", str_pool_get(strs, stmt->data.assignment.ident));
+            _pool_display_expr(self, stmt->data.assignment.expr, strs, stream);
             break;
 
         case StatementKind_RETURN:
             fprintf(stream, "return");
             if (stmt->data.ret_val != NO_ID) {
                 fprintf(stream, " ");
-                _pool_display_expr(self, stmt->data.ret_val, stream);
+                _pool_display_expr(self, stmt->data.ret_val, strs, stream);
             }
             break;
 
@@ -418,18 +356,18 @@ static void _pool_display_stmt(const NodePool self, StmtID root, FILE *stream) {
     }
 }
 
-void pool_display(const NodePool self, NodeID root, FILE *stream) {
+void pool_display(const NodePool self, NodeID root, StrPool strs, FILE *stream) {
     if (stream == NULL || self->size <= root) {
         return;
     }
 
     switch (self->entries[root].kind) {
     case PoolEntryKind_Statement:
-        _pool_display_stmt(self, root, stream);
+        _pool_display_stmt(self, root, strs, stream);
         break;
 
     case PoolEntryKind_Expression:
-        _pool_display_expr(self, root, stream);
+        _pool_display_expr(self, root, strs, stream);
         fprintf(stream, "\n");
         break;
     }

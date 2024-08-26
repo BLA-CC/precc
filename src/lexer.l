@@ -6,7 +6,9 @@
 #include "ast.h"
 #include "util.h"
 #include "parser.h"
+#include "str_pool.h"
 
+#define YY_EXTRA_TYPE StrPool *
 %}
 
 %option outfile="src/lexer.c" header-file="include/lexer.h"
@@ -41,7 +43,7 @@ IDENT      [a-zA-Z][a-zA-Z0-9]*
 "}" { return TOK_RCURLY; }
 ";" { return TOK_SEMICOLON; }
 
-{IDENT}  { yylval->TOK_IDENT = u_strdup(yytext); return TOK_IDENT; }
+{IDENT}  { yylval->TOK_IDENT = str_pool_put(*yyextra, yytext); return TOK_IDENT; }
 {DIGIT}+ { yylval->TOK_NUM = atoll(yytext); return TOK_NUM; }
 
 %%
