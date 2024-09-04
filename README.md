@@ -11,7 +11,8 @@ void main() {
     int z;
     z = x + y * 10;
 
-    bool w = true;
+    bool w;
+    w = true;
 
     return;
 }
