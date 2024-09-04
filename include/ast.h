@@ -58,6 +58,13 @@ typedef enum {
     StatementKind_RETURN,
 } StatementKind;
 
+// FIXME: rename to AST instead of Pool
+typedef enum {
+    PoolEntryKind_Expression,
+    PoolEntryKind_Statement,
+} PoolEntryKind;
+
+
 typedef union {
     ExprID ret_val;
 
@@ -77,6 +84,23 @@ typedef struct {
     StatementData data;
     StmtID next;
 } Statement;
+
+typedef union {
+    Expression expr;
+    Statement stmt;
+} PoolEntryData;
+
+typedef struct {
+    PoolEntryKind kind;
+    PoolEntryData data;
+} PoolEntry;
+
+
+struct Pool_S {
+    PoolEntry *entries;
+    size_t size;
+    size_t capacity;
+};
 
 typedef struct Pool_S *AST;
 
@@ -173,7 +197,7 @@ ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op);
  *
  * @returns A Statement if `id` represents a valid Statement, NULL otherwise
  */
-const Statement *ast_get_stmt(const AST self, StmtID id);
+Statement *ast_get_stmt(const AST self, StmtID id);
 
 /**
  * @brief Get an Expression from the AST
@@ -182,15 +206,8 @@ const Statement *ast_get_stmt(const AST self, StmtID id);
  *
  * @returns An Expression if `id` represents a valid Expression, NULL otherwise
  */
-const Expression *ast_get_expr(const AST self, ExprID id);
+Expression *ast_get_expr(const AST self, ExprID id);
 
-/**
- * @brief Display the subtree from the AST starting at `root`
- *
- * @param[in] root - ID of a valid Statement or Expression from the AST
- * @param[in] stream - Output handle to print the AST
- */
-void ast_display(const AST self, NodeID root, StrPool strs, FILE *stream);
 
 #ifdef __cplusplus
 }

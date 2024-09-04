@@ -1,31 +1,10 @@
-#include "ast.h"
+#include "../include/ast.h"
 
-#include <inttypes.h>
+
 #include <stdlib.h>
 #include <string.h>
 
 #define DEFAULT_CAPACITY 64
-
-typedef enum {
-    PoolEntryKind_Expression,
-    PoolEntryKind_Statement,
-} PoolEntryKind;
-
-typedef union {
-    Expression expr;
-    Statement stmt;
-} PoolEntryData;
-
-typedef struct {
-    PoolEntryKind kind;
-    PoolEntryData data;
-} PoolEntry;
-
-struct Pool_S {
-    PoolEntry *entries;
-    size_t size;
-    size_t capacity;
-};
 
 //
 // constructor & destructor
@@ -218,7 +197,7 @@ ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op) {
 // utility
 //
 
-const Statement *ast_get_stmt(const AST self, StmtID id) {
+Statement *ast_get_stmt(const AST self, StmtID id) {
     if (self->size <= id) {
         return NULL;
     }
@@ -232,7 +211,7 @@ const Statement *ast_get_stmt(const AST self, StmtID id) {
     return &entry->data.stmt;
 }
 
-const Expression *ast_get_expr(const AST self, ExprID id) {
+Expression *ast_get_expr(const AST self, ExprID id) {
     if (self->size <= id) {
         return NULL;
     }
@@ -244,126 +223,4 @@ const Expression *ast_get_expr(const AST self, ExprID id) {
     }
 
     return &entry->data.expr;
-}
-
-static const char *_str_bin_op(BinaryOp op) {
-    switch (op) {
-    case BinaryOp_ADD:
-        return "+";
-    case BinaryOp_MUL:
-        return "*";
-    default:
-        return "INVALID BinaryOp";
-    }
-}
-
-static const char *_str_type(Type type) {
-    switch (type) {
-    case Type_VOID:
-        return "void";
-    case Type_INT:
-        return "int";
-    case Type_BOOL:
-        return "bool";
-    default:
-        return "INVALID Type";
-    }
-}
-
-static const char *_str_bool(bool val) {
-    if (val) {
-        return "true";
-    } else {
-        return "false";
-    }
-}
-
-static void _ast_display_expr(const AST self, ExprID root, const StrPool strs, FILE *stream) {
-    const Expression *expr = ast_get_expr(self, root);
-
-    if (expr == NULL) {
-        return;
-    }
-
-    switch (expr->kind) {
-    case ExpressionKind_INT_CONSTANT:
-        fprintf(stream, "%" PRIi64 "", expr->data.int_constant);
-        break;
-
-    case ExpressionKind_BOOL_CONSTANT:
-        fprintf(stream, "%s", _str_bool(expr->data.bool_constant));
-        break;
-
-    case ExpressionKind_VAR:
-        fprintf(stream, "%s", str_pool_get(strs, expr->data.var));
-        break;
-
-    case ExpressionKind_BINARY:
-        fprintf(stream, "(");
-        _ast_display_expr(self, expr->data.binary.lhs, strs, stream);
-        fprintf(stream, " %s ", _str_bin_op(expr->data.binary.op));
-        _ast_display_expr(self, expr->data.binary.rhs, strs, stream);
-        fprintf(stream, ")");
-        break;
-
-    default:
-        break;
-    }
-}
-
-static void _ast_display_stmt(const AST self, StmtID root, StrPool strs, FILE *stream) {
-    while (root != NO_ID) {
-        const Statement *stmt = ast_get_stmt(self, root);
-
-        if (stmt == NULL) {
-            break;
-        }
-
-        switch (stmt->kind) {
-        case StatementKind_DECLARATION:
-            fprintf(
-                stream,
-                "%s %s",
-                _str_type(stmt->data.declaration.type),
-                str_pool_get(strs, stmt->data.declaration.ident));
-            break;
-
-        case StatementKind_ASSIGNMENT:
-            fprintf(stream, "%s = ", str_pool_get(strs, stmt->data.assignment.ident));
-            _ast_display_expr(self, stmt->data.assignment.expr, strs, stream);
-            break;
-
-        case StatementKind_RETURN:
-            fprintf(stream, "return");
-            if (stmt->data.ret_val != NO_ID) {
-                fprintf(stream, " ");
-                _ast_display_expr(self, stmt->data.ret_val, strs, stream);
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        fprintf(stream, ";\n");
-
-        root = stmt->next;
-    }
-}
-
-void ast_display(const AST self, NodeID root, StrPool strs, FILE *stream) {
-    if (stream == NULL || self->size <= root) {
-        return;
-    }
-
-    switch (self->entries[root].kind) {
-    case PoolEntryKind_Statement:
-        _ast_display_stmt(self, root, strs, stream);
-        break;
-
-    case PoolEntryKind_Expression:
-        _ast_display_expr(self, root, strs, stream);
-        fprintf(stream, "\n");
-        break;
-    }
 }

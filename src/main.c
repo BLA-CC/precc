@@ -2,6 +2,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "str_pool.h"
+#include "ast_visitor.h"
 
 int main(int argc, char *argv[]) {
     // yydebug = 1;
