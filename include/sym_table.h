@@ -16,14 +16,12 @@ typedef enum {
     SymType_VOID,
     SymType_INT,
     SymType_BOOL,
-    SymType_UNKNOWN,
 } SymType;
 
 typedef union {
     bool v_bool;
     int64_t v_int;
 } SymValue;
-
 
 typedef struct {
     StrID ident;

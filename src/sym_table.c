@@ -1,10 +1,9 @@
-#include <cstddef>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/sym_table.h"
+#include "sym_table.h"
 
 #define DEFAULT_SIZE 64;
 
