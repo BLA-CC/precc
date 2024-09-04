@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[]) {
     // yydebug = 1;
-    NodePool pool = pool_initialize();
+    AST ast = ast_initialize();
     StrPool strs = str_pool_init();
     ExprID root = NO_ID;
 
@@ -17,16 +17,16 @@ int main(int argc, char *argv[]) {
 
     // YY_BUFFER_STATE state = yy_scan_string(argv[1], scanner);
 
-    if (yyparse(pool, &root, scanner)) {
+    if (yyparse(ast, &root, scanner)) {
         return 1;
     }
 
     // yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
 
-    pool_display(pool, root, strs, stdout);
+    ast_display(ast, root, strs, stdout);
 
-    pool_release(pool);
+    ast_release(ast);
     str_pool_release(strs);
 }
 

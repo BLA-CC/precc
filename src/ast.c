@@ -21,7 +21,7 @@ typedef struct {
     PoolEntryData data;
 } PoolEntry;
 
-struct NodePool_S {
+struct Pool_S {
     PoolEntry *entries;
     size_t size;
     size_t capacity;
@@ -31,17 +31,12 @@ struct NodePool_S {
 // constructor & destructor
 //
 
-NodePool pool_initialize() {
-    NodePool self = (NodePool)calloc(1, sizeof(*self));
-
-    if (self == NULL) {
-        return NULL;
-    }
-
+AST ast_initialize() {
+    AST self = (AST)calloc(1, sizeof(*self));
     return self;
 }
 
-void pool_release(NodePool self) {
+void ast_release(AST self) {
     if (self == NULL) {
         return;
     }
@@ -54,11 +49,11 @@ void pool_release(NodePool self) {
 // tree construction
 //
 
-static inline bool _should_reallocate(NodePool self) {
+static inline bool _should_reallocate(AST self) {
     return self->size == self->capacity;
 }
 
-static bool _try_reallocate(NodePool self) {
+static bool _try_reallocate(AST self) {
     PoolEntry *dummy = NULL;
     size_t new_capacity = 0;
 
@@ -81,7 +76,7 @@ static bool _try_reallocate(NodePool self) {
     return true;
 }
 
-static NodeID _push(NodePool self, const PoolEntry *entry) {
+static NodeID _push(AST self, const PoolEntry *entry) {
     if (_should_reallocate(self)) {
         bool reallocate_success = _try_reallocate(self);
 
@@ -98,7 +93,7 @@ static NodeID _push(NodePool self, const PoolEntry *entry) {
     return id;
 }
 
-StmtID pool_ret(NodePool self, StmtID prev, ExprID expr) {
+StmtID ast_ret(AST self, StmtID prev, ExprID expr) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
@@ -118,7 +113,7 @@ StmtID pool_ret(NodePool self, StmtID prev, ExprID expr) {
 }
 
 StmtID
-pool_declaration(NodePool self, StmtID prev, Type type, StrID ident) {
+ast_declaration(AST self, StmtID prev, Type type, StrID ident) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
@@ -141,7 +136,7 @@ pool_declaration(NodePool self, StmtID prev, Type type, StrID ident) {
 }
 
 StmtID
-pool_assignment(NodePool self, StmtID prev, StrID ident, ExprID expr) {
+ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
@@ -163,7 +158,7 @@ pool_assignment(NodePool self, StmtID prev, StrID ident, ExprID expr) {
     return node_id;
 }
 
-ExprID pool_int_constant(NodePool self, int64_t constant) {
+ExprID ast_int_constant(AST self, int64_t constant) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Expression,
         .data = { .expr = {
@@ -176,7 +171,7 @@ ExprID pool_int_constant(NodePool self, int64_t constant) {
     return node_id;
 }
 
-ExprID pool_bool_constant(NodePool self, bool constant) {
+ExprID ast_bool_constant(AST self, bool constant) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Expression,
         .data = { .expr = {
@@ -189,7 +184,7 @@ ExprID pool_bool_constant(NodePool self, bool constant) {
     return node_id;
 }
 
-ExprID pool_var(NodePool self, StrID var) {
+ExprID ast_var(AST self, StrID var) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Expression,
         .data = { .expr = {
@@ -202,7 +197,7 @@ ExprID pool_var(NodePool self, StrID var) {
     return node_id;
 }
 
-ExprID pool_binary(NodePool self, ExprID lhs, ExprID rhs, BinaryOp op) {
+ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Expression,
         .data = { .expr = {
@@ -223,7 +218,7 @@ ExprID pool_binary(NodePool self, ExprID lhs, ExprID rhs, BinaryOp op) {
 // utility
 //
 
-const Statement *pool_get_stmt(const NodePool self, StmtID id) {
+const Statement *ast_get_stmt(const AST self, StmtID id) {
     if (self->size <= id) {
         return NULL;
     }
@@ -237,7 +232,7 @@ const Statement *pool_get_stmt(const NodePool self, StmtID id) {
     return &entry->data.stmt;
 }
 
-const Expression *pool_get_expr(const NodePool self, ExprID id) {
+const Expression *ast_get_expr(const AST self, ExprID id) {
     if (self->size <= id) {
         return NULL;
     }
@@ -283,8 +278,8 @@ static const char *_str_bool(bool val) {
     }
 }
 
-static void _pool_display_expr(const NodePool self, ExprID root, const StrPool strs, FILE *stream) {
-    const Expression *expr = pool_get_expr(self, root);
+static void _ast_display_expr(const AST self, ExprID root, const StrPool strs, FILE *stream) {
+    const Expression *expr = ast_get_expr(self, root);
 
     if (expr == NULL) {
         return;
@@ -305,9 +300,9 @@ static void _pool_display_expr(const NodePool self, ExprID root, const StrPool s
 
     case ExpressionKind_BINARY:
         fprintf(stream, "(");
-        _pool_display_expr(self, expr->data.binary.lhs, strs, stream);
+        _ast_display_expr(self, expr->data.binary.lhs, strs, stream);
         fprintf(stream, " %s ", _str_bin_op(expr->data.binary.op));
-        _pool_display_expr(self, expr->data.binary.rhs, strs, stream);
+        _ast_display_expr(self, expr->data.binary.rhs, strs, stream);
         fprintf(stream, ")");
         break;
 
@@ -316,9 +311,9 @@ static void _pool_display_expr(const NodePool self, ExprID root, const StrPool s
     }
 }
 
-static void _pool_display_stmt(const NodePool self, StmtID root, StrPool strs, FILE *stream) {
+static void _ast_display_stmt(const AST self, StmtID root, StrPool strs, FILE *stream) {
     while (root != NO_ID) {
-        const Statement *stmt = pool_get_stmt(self, root);
+        const Statement *stmt = ast_get_stmt(self, root);
 
         if (stmt == NULL) {
             break;
@@ -335,14 +330,14 @@ static void _pool_display_stmt(const NodePool self, StmtID root, StrPool strs, F
 
         case StatementKind_ASSIGNMENT:
             fprintf(stream, "%s = ", str_pool_get(strs, stmt->data.assignment.ident));
-            _pool_display_expr(self, stmt->data.assignment.expr, strs, stream);
+            _ast_display_expr(self, stmt->data.assignment.expr, strs, stream);
             break;
 
         case StatementKind_RETURN:
             fprintf(stream, "return");
             if (stmt->data.ret_val != NO_ID) {
                 fprintf(stream, " ");
-                _pool_display_expr(self, stmt->data.ret_val, strs, stream);
+                _ast_display_expr(self, stmt->data.ret_val, strs, stream);
             }
             break;
 
@@ -356,18 +351,18 @@ static void _pool_display_stmt(const NodePool self, StmtID root, StrPool strs, F
     }
 }
 
-void pool_display(const NodePool self, NodeID root, StrPool strs, FILE *stream) {
+void ast_display(const AST self, NodeID root, StrPool strs, FILE *stream) {
     if (stream == NULL || self->size <= root) {
         return;
     }
 
     switch (self->entries[root].kind) {
     case PoolEntryKind_Statement:
-        _pool_display_stmt(self, root, strs, stream);
+        _ast_display_stmt(self, root, strs, stream);
         break;
 
     case PoolEntryKind_Expression:
-        _pool_display_expr(self, root, strs, stream);
+        _ast_display_expr(self, root, strs, stream);
         fprintf(stream, "\n");
         break;
     }

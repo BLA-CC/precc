@@ -9,7 +9,7 @@
 #include "lexer.h"
 #include "str_pool.h"
 
-int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg);
+int yyerror(AST ast, StmtID *root, yyscan_t scanner, const char *msg);
 
 StmtID last_stmt = NO_ID;
 
@@ -25,7 +25,7 @@ StmtID last_stmt = NO_ID;
 %define api.pure
 %define api.value.type union
 %define parse.trace
-%parse-param { NodePool pool    }
+%parse-param { AST ast    }
 %parse-param { StmtID   *root   }
 
 %param { yyscan_t scanner }
@@ -70,30 +70,30 @@ seq
 stmt: decl | asgn | retn;
 
 decl
-    : TOK_BOOL TOK_IDENT ";" { $$ = pool_declaration(pool, last_stmt, Type_BOOL, $2); last_stmt = $$; }
-    | TOK_INT TOK_IDENT ";"  { $$ = pool_declaration(pool, last_stmt, Type_INT, $2); last_stmt = $$; }
+    : TOK_BOOL TOK_IDENT ";" { $$ = ast_declaration(ast, last_stmt, Type_BOOL, $2); last_stmt = $$; }
+    | TOK_INT TOK_IDENT ";"  { $$ = ast_declaration(ast, last_stmt, Type_INT, $2); last_stmt = $$; }
     ;
 
-asgn: TOK_IDENT "=" expr ";" { $$ = pool_assignment(pool, last_stmt, $1, $3); last_stmt = $$; };
+asgn: TOK_IDENT "=" expr ";" { $$ = ast_assignment(ast, last_stmt, $1, $3); last_stmt = $$; };
 
 retn
-    : TOK_RETURN ";"      { $$ = pool_ret(pool, last_stmt, NO_ID); last_stmt = $$; }
-    | TOK_RETURN expr ";" { $$ = pool_ret(pool, last_stmt, $2); last_stmt = $$; }
+    : TOK_RETURN ";"      { $$ = ast_ret(ast, last_stmt, NO_ID); last_stmt = $$; }
+    | TOK_RETURN expr ";" { $$ = ast_ret(ast, last_stmt, $2); last_stmt = $$; }
 
 expr
-    : expr[L] "+" expr[R] { $$ = pool_binary(pool, $L, $R, BinaryOp_ADD); }
-    | expr[L] "*" expr[R] { $$ = pool_binary(pool, $L, $R, BinaryOp_MUL); }
+    : expr[L] "+" expr[R] { $$ = ast_binary(ast, $L, $R, BinaryOp_ADD); }
+    | expr[L] "*" expr[R] { $$ = ast_binary(ast, $L, $R, BinaryOp_MUL); }
     | "(" expr[E] ")"     { $$ = $E; }
-    | TOK_IDENT           { $$ = pool_var(pool, $1); }
-    | TOK_NUM             { $$ = pool_int_constant(pool, $1); }
-    | TOK_TRUE            { $$ = pool_bool_constant(pool, true); }
-    | TOK_FALSE           { $$ = pool_bool_constant(pool, false); }
+    | TOK_IDENT           { $$ = ast_var(ast, $1); }
+    | TOK_NUM             { $$ = ast_int_constant(ast, $1); }
+    | TOK_TRUE            { $$ = ast_bool_constant(ast, true); }
+    | TOK_FALSE           { $$ = ast_bool_constant(ast, false); }
     ;
 
 %%
 
-int yyerror(NodePool pool, StmtID *root, yyscan_t scanner, const char *msg) {
-    (void) pool, (void) root, (void) scanner;
+int yyerror(AST ast, StmtID *root, yyscan_t scanner, const char *msg) {
+    (void) ast, (void) root, (void) scanner;
 
     fprintf(stderr, "error: %s\n", msg);
     return 1;

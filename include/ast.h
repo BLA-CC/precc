@@ -78,34 +78,34 @@ typedef struct {
     StmtID next;
 } Statement;
 
-typedef struct NodePool_S *NodePool;
+typedef struct Pool_S *AST;
 
 /**
- * @brief Create and initialize a NodePool
+ * @brief Create and initialize the AST
  *
- * @returns A valid instance of NodePool if sucessful, NULL otherwise
+ * @returns A valid instance of AST if sucessful, NULL otherwise
  */
-NodePool pool_initialize();
+AST ast_initialize();
 
 /**
- * @brief Free the memory of the NodePool
+ * @brief Free the memory of the AST
  *
- * @note All IDs from the pool are considered invalid after calling this
+ * @note All IDs from the AST are considered invalid after calling this
  */
-void pool_release(NodePool self);
+void ast_release(AST self);
 
 /**
- * @brief Push a 'return' Statement into the pool
+ * @brief Push a 'return' Statement into the AST
  *
  * @param[in] prev - ID of a previous statement or NO_ID
  * @param[in] expr - ID of a valid expression or NO_ID
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID pool_ret(NodePool self, StmtID prev, ExprID expr);
+StmtID ast_ret(AST self, StmtID prev, ExprID expr);
 
 /**
- * @brief Push a 'declaration' Statement into the pool
+ * @brief Push a 'declaration' Statement into the AST
  *
  * @param[in] prev - ID of a previous statement or NO_ID
  * @param[in] type - Datatype of the variable to be declared
@@ -114,83 +114,83 @@ StmtID pool_ret(NodePool self, StmtID prev, ExprID expr);
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
 StmtID
-pool_declaration(NodePool self, StmtID prev, Type type, StrID ident);
+ast_declaration(AST self, StmtID prev, Type type, StrID ident);
 
 /**
- * @brief Push an 'assignment' Statement into the pool
+ * @brief Push an 'assignment' Statement into the AST
  *
  * @param[in] prev - ID of a previous statement or NO_ID
  * @param[in] ident - Name of the variable to be declared
- * @param[in] expr - ID of a valid node from the pool
+ * @param[in] expr - ID of a valid node from the AST
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
 StmtID
-pool_assignment(NodePool self, StmtID prev, StrID ident, ExprID expr);
+ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr);
 
 /**
- * @brief Push an 'integer constant' Expression into the pool
+ * @brief Push an 'integer constant' Expression into the AST
  *
  * @param[in] constant - Value of the constant to push
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID pool_int_constant(NodePool self, int64_t constant);
+ExprID ast_int_constant(AST self, int64_t constant);
 
 /**
- * @brief Push a 'boolean constant' Statement into the pool
+ * @brief Push a 'boolean constant' Statement into the AST
  *
  * @param[in] constant - Value of the constant to push
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID pool_bool_constant(NodePool self, bool constant);
+ExprID ast_bool_constant(AST self, bool constant);
 
 /**
- * @brief Push a 'var' Statement into the pool
+ * @brief Push a 'var' Statement into the AST
  *
  * @param[in] var - Name of the variable to push
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID pool_var(NodePool self, StrID var);
+ExprID ast_var(AST self, StrID var);
 
 /**
- * @brief Push a 'binary' Statement into the pool
+ * @brief Push a 'binary' Statement into the AST
  *
- * @param[in] lhs - ID of a valid node from the pool
- * @param[in] rhs - ID of a valid node from the pool
+ * @param[in] lhs - ID of a valid node from the AST
+ * @param[in] rhs - ID of a valid node from the AST
  * @param[in] op - Binary operation between `lhs` and `rhs`
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID pool_binary(NodePool self, ExprID lhs, ExprID rhs, BinaryOp op);
+ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op);
 
 /**
- * @brief Get a Statement from the pool
+ * @brief Get a Statement from the AST
  *
- * @param[in] id - Valid ID of a Statement from the pool
+ * @param[in] id - Valid ID of a Statement from the AST
  *
  * @returns A Statement if `id` represents a valid Statement, NULL otherwise
  */
-const Statement *pool_get_stmt(const NodePool self, StmtID id);
+const Statement *ast_get_stmt(const AST self, StmtID id);
 
 /**
- * @brief Get an Expression from the pool
+ * @brief Get an Expression from the AST
  *
- * @param[in] id - Valid ID of an Expression from the pool
+ * @param[in] id - Valid ID of an Expression from the AST
  *
  * @returns An Expression if `id` represents a valid Expression, NULL otherwise
  */
-const Expression *pool_get_expr(const NodePool self, ExprID id);
+const Expression *ast_get_expr(const AST self, ExprID id);
 
 /**
- * @brief Display the subtree from the pool starting at `root`
+ * @brief Display the subtree from the AST starting at `root`
  *
- * @param[in] root - ID of a valid Statement or Expression from the pool
+ * @param[in] root - ID of a valid Statement or Expression from the AST
  * @param[in] stream - Output handle to print the AST
  */
-void pool_display(const NodePool self, NodeID root, StrPool strs, FILE *stream);
+void ast_display(const AST self, NodeID root, StrPool strs, FILE *stream);
 
 #ifdef __cplusplus
 }
