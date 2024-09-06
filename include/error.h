@@ -3,10 +3,18 @@
 
 typedef enum {
     Status_OK,
+
+    // expected type T but got a different type
     Status_TypeError,
-    Status_MultipleDeclaration,
-    Status_UndeclSymbol,
+
+    // use of uninitialized symbol
     Status_UninitSymbol,
+
+    // use of undeclared symbol
+    Status_UndeclSymbol,
+
+    // re-declaration of an already declared symbol
+    Status_MultiDeclSymbol,
 } Status;
 
 #endif /* _ERROR_H */
