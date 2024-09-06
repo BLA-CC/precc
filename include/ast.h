@@ -41,16 +41,19 @@ typedef union {
     } binary;
 } ExpressionData;
 
-typedef struct {
-    ExpressionKind kind;
-    ExpressionData data;
-} Expression;
-
 typedef enum {
     Type_VOID,
     Type_INT,
     Type_BOOL,
-} Type;
+    Type_UNKNOWN,
+} Type; // TODO: Move to defs? 
+
+typedef struct {
+    ExpressionKind kind;
+    ExpressionData data;
+    Type type; // TODO: initialize with Type_UNKNOWN
+} Expression;
+
 
 typedef enum {
     StatementKind_DECLARATION,

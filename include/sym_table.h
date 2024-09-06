@@ -5,18 +5,12 @@
 #include <stdio.h>
 
 #include "defs.h"
+#include "ast.h"
 #include "str_pool.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-
-typedef enum {
-    SymType_VOID,
-    SymType_INT,
-    SymType_BOOL,
-} SymType;
 
 typedef union {
     bool v_bool;
@@ -25,7 +19,7 @@ typedef union {
 
 typedef struct {
     StrID ident;
-    SymType type;
+    Type type;
     SymValue value;
 } Sym;
 
@@ -51,6 +45,8 @@ SymTable symtable_initialize();
  */
 SymNode symtable_get_info(const SymTable self, StrID ident);
 
+// TODO: complete docs
+void symtable_add_symbol(SymTable self, const StrID ident, const Type type);
 
 /**
  * @brief Releases the memory associated with a symbol table.
@@ -59,6 +55,8 @@ SymNode symtable_get_info(const SymTable self, StrID ident);
  */
 void symtable_release(SymTable self);
 
+// TODO: docs
+Sym symnode_get_symbol(SymNode symnode);
 
 #ifdef __cplusplus
 }

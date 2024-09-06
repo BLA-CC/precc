@@ -12,15 +12,15 @@ struct Visitor_S {
     void *additional_args;
 
     /* Expression visitors */
-    Status  (*visit_int_constant)(Visitor visitor, Expression* expr);
-    Status (*visit_bool_constant)(Visitor visitor, Expression* expr);
-    Status           (*visit_var)(Visitor visitor, Expression* expr);
-    Status   (*visit_binary_expr)(Visitor visitor, Expression* expr);
+    Status  (*visit_int_constant)(Visitor visitor, ExprID expr_id);
+    Status (*visit_bool_constant)(Visitor visitor, ExprID expr_id);
+    Status           (*visit_var)(Visitor visitor, ExprID expr_id);
+    Status   (*visit_binary_expr)(Visitor visitor, ExprID expr_id);
 
     /* Statement visitors */
-    Status (*visit_declaration)(Visitor visitor, Statement* stmt);
-    Status  (*visit_assignment)(Visitor visitor, Statement* stmt);
-    Status      (*visit_return)(Visitor visitor, Statement* stmt);
+    Status (*visit_declaration)(Visitor visitor, StmtID stmt_id);
+    Status  (*visit_assignment)(Visitor visitor, StmtID stmt_id);
+    Status      (*visit_return)(Visitor visitor, StmtID stmt_id);
 };
 
 
@@ -28,13 +28,13 @@ Visitor init_visitor(
     AST ast,
     StrPool strs,
     void *additional_args,
-    Status  (*visit_int_constant)(Visitor visitor, Expression* expr),
-    Status (*visit_bool_constant)(Visitor visitor, Expression* expr),
-    Status           (*visit_var)(Visitor visitor, Expression* expr),
-    Status   (*visit_binary_expr)(Visitor visitor, Expression* expr),
-    Status   (*visit_declaration)(Visitor visitor,  Statement* stmt),
-    Status    (*visit_assignment)(Visitor visitor,  Statement* stmt),
-    Status        (*visit_return)(Visitor visitor,  Statement* stmt)
+    Status  (*visit_int_constant)(Visitor visitor, ExprID expr_id),
+    Status (*visit_bool_constant)(Visitor visitor, ExprID expr_id),
+    Status           (*visit_var)(Visitor visitor, ExprID expr_id),
+    Status   (*visit_binary_expr)(Visitor visitor, ExprID expr_id),
+    Status   (*visit_declaration)(Visitor visitor,  StmtID stmt_id),
+    Status    (*visit_assignment)(Visitor visitor,  StmtID stmt_id),
+    Status        (*visit_return)(Visitor visitor,  StmtID stmt_id)
 ){
     // TODO: We could define some generic visits if some of the 
     // pointers are NULL
@@ -53,22 +53,23 @@ Visitor init_visitor(
     return visitor;
 }
 
-void visit_expr(Visitor self, Expression *expr) {
+void visit_expr(Visitor self, ExprID expr_id) {
+    Expression *expr = ast_get_expr(self->ast, expr_id);
     switch (expr->kind) {
     case ExpressionKind_INT_CONSTANT:
-        self->visit_int_constant(self, expr);
+        self->visit_int_constant(self, expr_id);
         break;
 
     case ExpressionKind_BOOL_CONSTANT:
-        self->visit_bool_constant(self, expr);
+        self->visit_bool_constant(self, expr_id);
         break;
 
     case ExpressionKind_VAR:
-        self->visit_var(self, expr);
+        self->visit_var(self, expr_id);
         break;
 
     case ExpressionKind_BINARY:
-        self->visit_binary_expr(self, expr);
+        self->visit_binary_expr(self, expr_id);
         break;
 
     default:
@@ -76,18 +77,20 @@ void visit_expr(Visitor self, Expression *expr) {
     }
 }
 
-void visit_stmt(Visitor self, Statement *stmt) {
+void visit_stmt(Visitor self, StmtID stmt_id) {
+    Statement *stmt = ast_get_stmt(self->ast, stmt_id);
+
     switch (stmt->kind) {
     case StatementKind_DECLARATION: 
-        self->visit_declaration(self, stmt);
+        self->visit_declaration(self, stmt_id);
         break;
 
     case StatementKind_ASSIGNMENT:
-        self->visit_assignment(self, stmt);
+        self->visit_assignment(self, stmt_id);
         break;
 
     case StatementKind_RETURN:
-        self->visit_return(self, stmt);
+        self->visit_return(self, stmt_id);
         break;
 
     default:
@@ -113,7 +116,7 @@ void ast_visit(Visitor self, NodeID node_id) {
                 break;
             }
 
-            visit_stmt(self, stmt);
+            visit_stmt(self, node_id);
 
             node_id = stmt->next;
         }
@@ -121,13 +124,7 @@ void ast_visit(Visitor self, NodeID node_id) {
         break;
 
     case PoolEntryKind_Expression:
-        Expression *expr = ast_get_expr(ast, node_id);
-
-        if (expr == NULL) {
-            return;
-        }
-
-        visit_expr(self, expr);
+        visit_expr(self, node_id);
         break;
     }
 }
@@ -136,6 +133,16 @@ void ast_visit(Visitor self, NodeID node_id) {
 void visitor_release(Visitor self) {
     free(self);
 }
+
+// getter
+void *visitor_get_additional_args(Visitor self) {
+    return self->additional_args;
+}
+
+AST visitor_get_ast(Visitor self) {
+    return self->ast;
+}
+
 
 //
 // INSTANCES OF VISITORS
@@ -176,40 +183,46 @@ static const char *_str_bool(bool val) {
     }
 }
 
-Status display_int_constant(Visitor visitor, Expression* expr) {
+Status display_int_constant(Visitor visitor, ExprID expr_id) {
     FILE *stream = (FILE *)visitor->additional_args;
+    Expression *expr = ast_get_expr(visitor->ast, expr_id);
+
     fprintf(stream, "%" PRIi64 "", expr->data.int_constant);
     return 0;
 }
 
-Status display_bool_constant(Visitor visitor, Expression* expr) {
+Status display_bool_constant(Visitor visitor, ExprID expr_id) {
     FILE *stream = (FILE *)visitor->additional_args;
+    Expression *expr = ast_get_expr(visitor->ast, expr_id);
     fprintf(stream, "%s", _str_bool(expr->data.bool_constant));
+
     return 0;
 }
 
 
-Status display_var(Visitor visitor, Expression* expr) {
+Status display_var(Visitor visitor, ExprID expr_id) {
     FILE *stream = (FILE *)visitor->additional_args;
+    Expression *expr = ast_get_expr(visitor->ast, expr_id);
+
     fprintf(stream, "%s", str_pool_get(visitor->strs, expr->data.var));
     return 0;
 }
 
-Status display_binary_expr(Visitor visitor, Expression* expr) {
+Status display_binary_expr(Visitor visitor, ExprID expr_id) {
     FILE *stream = (FILE *)visitor->additional_args;
-    Expression *lhs_expression = ast_get_expr(visitor->ast, expr->data.binary.lhs);
-    Expression *rhs_expression = ast_get_expr(visitor->ast, expr->data.binary.rhs);
+    Expression *expr = ast_get_expr(visitor->ast, expr_id);
 
     fprintf(stream, "(");
-    visit_expr(visitor, lhs_expression);
+    visit_expr(visitor, expr->data.binary.lhs);
     fprintf(stream, " %s ", _str_bin_op(expr->data.binary.op));
-    visit_expr(visitor, rhs_expression);
+    visit_expr(visitor, expr->data.binary.rhs);
     fprintf(stream, ")");
     return 0;
 }
 
-Status display_declaration(Visitor visitor, Statement *stmt) {
+Status display_declaration(Visitor visitor, StmtID stmt_id) {
     FILE *stream = (FILE *)visitor->additional_args;
+    Statement *stmt = ast_get_stmt(visitor->ast, stmt_id);
 
     fprintf(
         stream, "%s %s", 
@@ -220,23 +233,24 @@ Status display_declaration(Visitor visitor, Statement *stmt) {
     return 0;
 }
 
-Status display_assignment(Visitor visitor, Statement *stmt) {
+Status display_assignment(Visitor visitor, StmtID stmt_id) {
     FILE *stream = (FILE *)visitor->additional_args;
-    Expression *assignment_expr = ast_get_expr(visitor->ast, stmt->data.assignment.expr);
+    Statement *stmt = ast_get_stmt(visitor->ast, stmt_id);
+
     fprintf(stream, "%s = ", str_pool_get(visitor->strs, stmt->data.assignment.ident));
-    visit_expr(visitor, assignment_expr);
+    visit_expr(visitor, stmt->data.assignment.expr);
     fprintf(stream, ";\n");
     return 0;
 }
 
-Status display_return(Visitor visitor, Statement *stmt) {
+Status display_return(Visitor visitor, StmtID stmt_id) {
     FILE *stream = (FILE *)visitor->additional_args;
+    Statement *stmt = ast_get_stmt(visitor->ast, stmt_id);
 
     fprintf(stream, "return");
     if (stmt->data.ret_val != NO_ID) {
-        Expression *return_expr = ast_get_expr(visitor->ast, stmt->data.ret_val);
         fprintf(stream, " ");
-        visit_expr(visitor, return_expr);
+        visit_expr(visitor, stmt->data.ret_val);
     }
     fprintf(stream, ";\n");
     return 0;

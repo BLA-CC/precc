@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     // yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
 
-    ast_display(ast, root, strs, stdout);
+    // ast_display(ast, root, strs, stdout);
 
     ast_release(ast);
     str_pool_release(strs);

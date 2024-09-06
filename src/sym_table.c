@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sym_table.h"
+#include "ast.h"
 
 #define DEFAULT_SIZE 64;
 
@@ -15,7 +16,11 @@ struct SymNode_S {
     SymNode _next;
 };
 
-SymNode _create_symbol(const StrID ident, const SymType type) {
+Sym symnode_get_symbol(SymNode symnode){
+    return  symnode->symbol;
+}
+
+SymNode _create_symbol(const StrID ident, const Type type) {
     SymNode self = (SymNode)malloc(sizeof(struct SymNode_S));
 
     self->has_value = false;
@@ -99,4 +104,12 @@ SymNode symtable_get_info(const SymTable self, StrID ident) {
         sym_node = sym_node->_next;
     }
     return NULL;
+}
+
+
+void symtable_add_symbol(SymTable self, const StrID ident, const Type type) {
+
+    SymNode symnode = _create_symbol(ident, type);
+    _symtable_insert(self, symnode);
+    
 }

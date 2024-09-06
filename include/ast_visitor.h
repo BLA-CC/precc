@@ -9,33 +9,18 @@ typedef int Status;
 
 typedef struct Visitor_S *Visitor;
 
-/**
- * @brief Initializes the Visitor with the given callbacks and data.
- *
- * @param[in] ast The abstract syntax tree to traverse.
- * @param[in] strs String pool for managing strings in the AST.
- * @param[in] additional_args Any additional arguments required by the visitor.
- * @param[in] visit_int_constant Callback for visiting integer constant expressions.
- * @param[in] visit_bool_constant Callback for visiting boolean constant expressions.
- * @param[in] visit_var Callback for visiting variable expressions.
- * @param[in] visit_binary_expr Callback for visiting binary expressions.
- * @param[in] visit_declaration Callback for visiting declaration statements.
- * @param[in] visit_assignment Callback for visiting assignment statements.
- * @param[in] visit_return Callback for visiting return statements.
- *
- * @returns Initialized visitor object with the provided callbacks.
- */
+// TODO: docs
 Visitor init_visitor(
     AST ast,
     StrPool strs,
     void *additional_args,
-    Status (*visit_int_constant)(Visitor visitor, Expression *expr),
-    Status (*visit_bool_constant)(Visitor visitor, Expression *expr),
-    Status (*visit_var)(Visitor visitor, Expression *expr),
-    Status (*visit_binary_expr)(Visitor visitor, Expression *expr),
-    Status (*visit_declaration)(Visitor visitor, Statement *stmt),
-    Status (*visit_assignment)(Visitor visitor, Statement *stmt),
-    Status (*visit_return)(Visitor visitor, Statement *stmt)
+    Status (*visit_int_constant)(Visitor visitor, ExprID expr_id),
+    Status (*visit_bool_constant)(Visitor visitor, ExprID expr_id),
+    Status (*visit_var)(Visitor visitor, ExprID expr_id),
+    Status (*visit_binary_expr)(Visitor visitor, ExprID expr_id),
+    Status (*visit_declaration)(Visitor visitor, StmtID stmt_id),
+    Status (*visit_assignment)(Visitor visitor, StmtID stmt_id),
+    Status (*visit_return)(Visitor visitor, StmtID stmt_id)
 );
 
 /**
@@ -56,9 +41,9 @@ void ast_visit(Visitor self, NodeID node_id);
  * traversing the AST.
  *
  * @param[in] self The visitor performing the traversal.
- * @param[in] expr The expression node to visit.
+ * @param[in] expr The ID of the expression node to visit.
  */
-void visit_expr(Visitor self, Expression *expr);
+void visit_expr(Visitor self, ExprID expr_id);
 
 /**
  * @brief Visits a specific statement node within the AST.
@@ -67,11 +52,11 @@ void visit_expr(Visitor self, Expression *expr);
  * traversing the AST.
  *
  * @param[in] self The visitor performing the traversal.
- * @param[in] stmt The statement node to visit.
+ * @param[in] stmt_id The ID of the statement node to visit.
  */
 
 
-void visit_stmt(Visitor self, Statement *stmt);
+void visit_stmt(Visitor self, StmtID stmt_id);
 
 /**
  * @brief Releases the memory associated with a visitor.
@@ -80,6 +65,9 @@ void visit_stmt(Visitor self, Statement *stmt);
  */
 void visitor_release(Visitor self);
 
+// TODO: document
+void *visitor_get_additional_args(Visitor self);
+AST visitor_get_ast(Visitor self);
 
 //
 // USE CASE EXAMPLE OF A VISITOR:
