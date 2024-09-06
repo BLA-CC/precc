@@ -1,6 +1,5 @@
 #include "../include/ast.h"
 
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -91,8 +90,7 @@ StmtID ast_ret(AST self, StmtID prev, ExprID expr) {
     return node_id;
 }
 
-StmtID
-ast_declaration(AST self, StmtID prev, Type type, StrID ident) {
+StmtID ast_declaration(AST self, StmtID prev, Type type, StrID ident) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
@@ -114,8 +112,7 @@ ast_declaration(AST self, StmtID prev, Type type, StrID ident) {
     return node_id;
 }
 
-StmtID
-ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr) {
+StmtID ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr) {
     PoolEntry entry = (PoolEntry){
         .kind = PoolEntryKind_Statement,
         .data = { .stmt = {
@@ -134,6 +131,23 @@ ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr) {
         self->entries[prev].data.stmt.next = node_id;
     }
 
+    return node_id;
+}
+
+StmtID ast_main(AST self, Type type, StmtID body) {
+    PoolEntry entry = (PoolEntry){
+        .kind = PoolEntryKind_Statement,
+        .data = { .stmt = {
+            .kind = StatementKind_MAIN,
+            .data = { .main = {
+                .type = type,
+                .body = body,
+            } },
+            .next = NO_ID,
+        } },
+    };
+
+    NodeID node_id = _push(self, &entry);
     return node_id;
 }
 

@@ -5,7 +5,7 @@
 #include "str_pool.h"
 
 // FIXME: redefine this better
-typedef int Status; 
+typedef int Status;
 
 typedef struct Visitor_S *Visitor;
 
@@ -20,17 +20,16 @@ Visitor init_visitor(
     Status (*visit_binary_expr)(Visitor visitor, ExprID expr_id),
     Status (*visit_declaration)(Visitor visitor, StmtID stmt_id),
     Status (*visit_assignment)(Visitor visitor, StmtID stmt_id),
-    Status (*visit_return)(Visitor visitor, StmtID stmt_id)
-);
+    Status (*visit_return)(Visitor visitor, StmtID stmt_id),
+    Status (*visit_main)(Visitor visitor, StmtID stmt_id));
 
 /**
- * @brief Traverses the AST from the given root node, visiting expressions 
+ * @brief Traverses the AST from the given root node, visiting expressions
  * and statements based on the visitor callbacks.
  *
  * @param[in] self The visitor responsible for traversing the AST.
  * @param[in] node_id The ID of the root node in the AST to begin traversal.
  */
-
 
 void ast_visit(Visitor self, NodeID node_id);
 
@@ -54,7 +53,6 @@ void visit_expr(Visitor self, ExprID expr_id);
  * @param[in] self The visitor performing the traversal.
  * @param[in] stmt_id The ID of the statement node to visit.
  */
-
 
 void visit_stmt(Visitor self, StmtID stmt_id);
 

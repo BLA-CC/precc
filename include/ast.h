@@ -45,8 +45,7 @@ typedef enum {
     Type_VOID,
     Type_INT,
     Type_BOOL,
-    Type_UNKNOWN,
-} Type; // TODO: Move to defs? 
+} Type; // TODO: Move to defs?
 
 typedef struct {
     ExpressionKind kind;
@@ -54,11 +53,11 @@ typedef struct {
     Type type; // TODO: initialize with Type_UNKNOWN
 } Expression;
 
-
 typedef enum {
     StatementKind_DECLARATION,
     StatementKind_ASSIGNMENT,
     StatementKind_RETURN,
+    StatementKind_MAIN,
 } StatementKind;
 
 // FIXME: rename to AST instead of Pool
@@ -66,7 +65,6 @@ typedef enum {
     PoolEntryKind_Expression,
     PoolEntryKind_Statement,
 } PoolEntryKind;
-
 
 typedef union {
     ExprID ret_val;
@@ -80,6 +78,10 @@ typedef union {
         StrID ident;
         ExprID expr;
     } assignment;
+    struct {
+        Type type;
+        StmtID body;
+    } main;
 } StatementData;
 
 typedef struct {
@@ -97,7 +99,6 @@ typedef struct {
     PoolEntryKind kind;
     PoolEntryData data;
 } PoolEntry;
-
 
 struct Pool_S {
     PoolEntry *entries;
@@ -140,8 +141,7 @@ StmtID ast_ret(AST self, StmtID prev, ExprID expr);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID
-ast_declaration(AST self, StmtID prev, Type type, StrID ident);
+StmtID ast_declaration(AST self, StmtID prev, Type type, StrID ident);
 
 /**
  * @brief Push an 'assignment' Statement into the AST
@@ -152,8 +152,17 @@ ast_declaration(AST self, StmtID prev, Type type, StrID ident);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID
-ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr);
+StmtID ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr);
+
+/**
+ * @brief Push a 'main' Statement into the AST
+ *
+ * @param[in] type - Return type
+ * @param[in] body - ID of a valid node from the AST
+ *
+ * @returns The ID of the new node if successful, NO_ID otherwise
+ */
+StmtID ast_main(AST self, Type type, StmtID body);
 
 /**
  * @brief Push an 'integer constant' Expression into the AST
@@ -210,7 +219,6 @@ Statement *ast_get_stmt(const AST self, StmtID id);
  * @returns An Expression if `id` represents a valid Expression, NULL otherwise
  */
 Expression *ast_get_expr(const AST self, ExprID id);
-
 
 #ifdef __cplusplus
 }

@@ -26,7 +26,6 @@ typedef struct {
 typedef struct SymNode_S *SymNode;
 typedef struct SymTable_S *SymTable;
 
-
 /**
  * @brief Initializes a new symbol table.
  *
@@ -34,14 +33,14 @@ typedef struct SymTable_S *SymTable;
  */
 SymTable symtable_initialize();
 
-
 /**
  * @brief Retrieves symbol information from the symbol table.
  *
  * @param[in] self - A pointer to the symbol table
  * @param[in] ident - The identifier of the symbol
  *
- * @returns A pointer to the symbol node containing information about the symbol, or NULL if not found.
+ * @returns A pointer to the symbol node containing information about the
+ * symbol, or NULL if not found.
  */
 SymNode symtable_get_info(const SymTable self, StrID ident);
 

@@ -16,8 +16,8 @@ struct SymNode_S {
     SymNode _next;
 };
 
-Sym symnode_get_symbol(SymNode symnode){
-    return  symnode->symbol;
+Sym symnode_get_symbol(SymNode symnode) {
+    return symnode->symbol;
 }
 
 SymNode _create_symbol(const StrID ident, const Type type) {
@@ -36,7 +36,6 @@ void _set_symbol(SymNode self, const SymValue value) {
     self->symbol.value = value;
 }
 
-
 /////////// SYMBOL TABLE ////////////////
 
 struct SymTable_S {
@@ -52,7 +51,7 @@ SymTable symtable_initialize() {
         return NULL;
 
     self->size = DEFAULT_SIZE;
-    self->hash_table = (SymNode*)calloc(self->size, sizeof(SymNode));
+    self->hash_table = (SymNode *)calloc(self->size, sizeof(SymNode));
 
     if (self->hash_table == NULL) {
         free(self);
@@ -65,7 +64,7 @@ SymTable symtable_initialize() {
 int _hash_function(const SymTable self, const StrID key) {
     return key % self->size;
 }
- 
+
 void _symtable_insert(SymTable self, SymNode symnode) {
     int bucket_idx = _hash_function(self, symnode->symbol.ident);
 
@@ -77,7 +76,7 @@ void _symtable_insert(SymTable self, SymNode symnode) {
     }
 }
 
-void symtable_release (SymTable self) {
+void symtable_release(SymTable self) {
     SymNode next_node, current_node;
 
     for (size_t i = 0; i < self->size; i++) {
@@ -106,10 +105,8 @@ SymNode symtable_get_info(const SymTable self, StrID ident) {
     return NULL;
 }
 
-
 void symtable_add_symbol(SymTable self, const StrID ident, const Type type) {
 
     SymNode symnode = _create_symbol(ident, type);
     _symtable_insert(self, symnode);
-    
 }

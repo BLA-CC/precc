@@ -43,12 +43,15 @@ StmtID last_stmt = NO_ID;
 %token <StrID> TOK_IDENT
 %token <int64_t> TOK_NUM
 
+%type <StmtID> input
 %type <StmtID> seq
 %type <StmtID> stmt
 %type <StmtID> decl
 %type <StmtID> asgn
 %type <StmtID> retn
 %type <ExprID> expr
+
+%type <Type> main_type
 
 /* Precedence (increasing) and associativity:
    a+b+c is (a+b)+c: left associativity
@@ -58,9 +61,15 @@ StmtID last_stmt = NO_ID;
 
 %%
 
-input: main_type TOK_MAIN "(" ")" "{" seq[body] "}" { *root = $body; }
+input: main_type TOK_MAIN "(" ")" "{" seq[body] "}" { 
+     *root = ast_main(ast, $1, $body);
+     }
 
-main_type: TOK_VOID | TOK_BOOL | TOK_INT
+main_type
+    : TOK_VOID { $$ = Type_VOID; }
+    | TOK_BOOL { $$ = Type_BOOL; }
+    | TOK_INT  { $$ = Type_INT; }
+    ;
 
 seq
     : /* empty */ { $$ = NO_ID; }

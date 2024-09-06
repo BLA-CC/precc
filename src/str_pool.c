@@ -68,4 +68,3 @@ const char *str_pool_get(StrPool self, StrID id) {
 
     return &self->data[id];
 }
-
