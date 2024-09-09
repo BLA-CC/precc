@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "str_pool.h"
 #include "ast_visitor.h"
+#include "sempass.h"
 
 int main(int argc, char *argv[]) {
     // yydebug = 1;
@@ -26,6 +27,8 @@ int main(int argc, char *argv[]) {
     yylex_destroy(scanner);
 
     ast_display(ast, root, strs, stdout);
+    Status s = sempass(ast, root, strs);
+    printf("Status: %d\n", s);
 
     ast_release(ast);
     str_pool_release(strs);

@@ -41,16 +41,10 @@ typedef union {
     } binary;
 } ExpressionData;
 
-typedef enum {
-    Type_VOID,
-    Type_INT,
-    Type_BOOL,
-} Type; // TODO: Move to defs?
-
 typedef struct {
     ExpressionKind kind;
     ExpressionData data;
-    Type type; // TODO: initialize with Type_UNKNOWN
+    Type type;
 } Expression;
 
 typedef enum {
@@ -60,7 +54,6 @@ typedef enum {
     StatementKind_MAIN,
 } StatementKind;
 
-// FIXME: rename to AST instead of Pool
 typedef enum {
     PoolEntryKind_Expression,
     PoolEntryKind_Statement,

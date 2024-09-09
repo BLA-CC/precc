@@ -15,6 +15,13 @@ typedef enum {
 
     // re-declaration of an already declared symbol
     Status_MultiDeclSymbol,
+
+    // wrong use of interfaces
+    Status_InternalError,
+
+    // Main function should return Int or bool expression
+    Status_MissingReturn,
+
 } Status;
 
 #endif /* _ERROR_H */

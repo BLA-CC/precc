@@ -1,7 +1,9 @@
+#include <stdio.h>
 #include <stdlib.h>
-#include "ast.h"
-#include "str_pool.h"
-#include "ast_visitor.h"
+#include "../include/ast.h"
+#include "../include/str_pool.h"
+#include "../include/ast_visitor.h"
+#include "../include/error.h"
 
 #include <inttypes.h>
 
@@ -38,7 +40,6 @@ Visitor init_visitor(
     Status (*visit_main)(Visitor visitor, StmtID stmt_id)) {
     // TODO: We could define some generic visits if some of the
     // pointers are NULL
-    // FIXME: Esto es bastante horrible
     Visitor visitor = malloc(sizeof(struct Visitor_S));
     visitor->ast = ast;
     visitor->strs = strs;
@@ -54,77 +55,73 @@ Visitor init_visitor(
     return visitor;
 }
 
-void visit_expr(Visitor self, ExprID expr_id) {
+Status visit_expr(Visitor self, ExprID expr_id) {
     Expression *expr = ast_get_expr(self->ast, expr_id);
+    Status s;
+
     switch (expr->kind) {
     case ExpressionKind_INT_CONSTANT:
-        self->visit_int_constant(self, expr_id);
+        s = self->visit_int_constant(self, expr_id);
         break;
 
     case ExpressionKind_BOOL_CONSTANT:
-        self->visit_bool_constant(self, expr_id);
+        s = self->visit_bool_constant(self, expr_id);
         break;
 
     case ExpressionKind_VAR:
-        self->visit_var(self, expr_id);
+        s = self->visit_var(self, expr_id);
         break;
 
     case ExpressionKind_BINARY:
-        self->visit_binary_expr(self, expr_id);
+        s = self->visit_binary_expr(self, expr_id);
         break;
     }
+
+    return s;
 }
 
-void visit_stmt(Visitor self, StmtID stmt_id) {
+Status visit_stmt(Visitor self, StmtID stmt_id) {
     Statement *stmt = ast_get_stmt(self->ast, stmt_id);
 
+    if (stmt == NULL) {
+        return Status_OK;
+    }
+
+    Status s;
     switch (stmt->kind) {
     case StatementKind_DECLARATION:
-        self->visit_declaration(self, stmt_id);
+        s = self->visit_declaration(self, stmt_id);
         break;
 
     case StatementKind_ASSIGNMENT:
-        self->visit_assignment(self, stmt_id);
+        s = self->visit_assignment(self, stmt_id);
         break;
 
     case StatementKind_RETURN:
-        self->visit_return(self, stmt_id);
+        s = self->visit_return(self, stmt_id);
         break;
 
     case StatementKind_MAIN:
-        self->visit_main(self, stmt_id);
+        s = self->visit_main(self, stmt_id);
         break;
     }
+
+    Status next_s = Status_OK;
+    if (stmt->next != NO_ID) {
+        next_s = visit_stmt(self, stmt->next);
+    }
+
+    return s != Status_OK ? s : next_s;
 }
 
-void ast_visit(Visitor self, NodeID node_id) {
+Status ast_visit(Visitor self, NodeID node_id) {
     AST ast = self->ast;
 
     if (ast->size <= node_id) {
-        return;
+        return Status_InternalError;
     }
 
-    switch (ast->entries[node_id].kind) {
-    case PoolEntryKind_Statement:
-
-        while (node_id != NO_ID) {
-            Statement *stmt = ast_get_stmt(ast, node_id);
-
-            if (stmt == NULL) {
-                break;
-            }
-
-            visit_stmt(self, node_id);
-
-            node_id = stmt->next;
-        }
-
-        break;
-
-    case PoolEntryKind_Expression:
-        visit_expr(self, node_id);
-        break;
-    }
+    return visit_stmt(self, node_id);
 }
 
 void visitor_release(Visitor self) {
@@ -138,6 +135,10 @@ void *visitor_get_additional_args(Visitor self) {
 
 AST visitor_get_ast(Visitor self) {
     return self->ast;
+}
+
+StrPool visitor_get_strs(Visitor self) {
+    return self->strs;
 }
 
 //

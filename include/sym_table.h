@@ -29,32 +29,46 @@ typedef struct SymTable_S *SymTable;
 /**
  * @brief Initializes a new symbol table.
  *
- * @returns A pointer to the new symbol table if successful, NULL otherwise.
+ * @returns A pointer to the new symbol table if successful, or NULL if the
+ * initialization fails.
  */
 SymTable symtable_initialize();
 
 /**
  * @brief Retrieves symbol information from the symbol table.
  *
- * @param[in] self - A pointer to the symbol table
- * @param[in] ident - The identifier of the symbol
+ * @param[in] self  A pointer to the symbol table.
+ * @param[in] ident The identifier of the symbol to retrieve.
  *
  * @returns A pointer to the symbol node containing information about the
- * symbol, or NULL if not found.
+ * symbol, or NULL if the symbol is not found.
  */
 SymNode symtable_get_info(const SymTable self, StrID ident);
 
-// TODO: complete docs
+/**
+ * @brief Adds a new symbol to the symbol table.
+ *
+ * @param[in] self  A pointer to the symbol table.
+ * @param[in] ident The identifier of the symbol to add.
+ * @param[in] type  The type of the symbol to add.
+ */
 void symtable_add_symbol(SymTable self, const StrID ident, const Type type);
 
 /**
  * @brief Releases the memory associated with a symbol table.
  *
- * @param[in] self - A pointer to the symbol table to be released.
+ * @param[in] self A pointer to the symbol table to be released.
  */
 void symtable_release(SymTable self);
 
-// TODO: docs
+/**
+ * @brief Retrieves the symbol data from a node.
+ *
+ * @param[in] symnode A pointer to the symbol node from which to retrieve the
+ * symbol data.
+ *
+ * @returns The symbol structure containing information about the symbol.
+ */
 Sym symnode_get_symbol(SymNode symnode);
 
 #ifdef __cplusplus
