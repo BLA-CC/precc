@@ -11,7 +11,7 @@
 
 int yyerror(AST ast, StmtID *root, yyscan_t scanner, const char *msg);
 
-StmtID last_stmt = NO_ID;
+NodeID last_stmt = NO_ID;
 
 %}
 
@@ -25,8 +25,8 @@ StmtID last_stmt = NO_ID;
 %define api.pure
 %define api.value.type union
 %define parse.trace
-%parse-param { AST ast    }
-%parse-param { StmtID   *root   }
+%parse-param { Ast ast    }
+%parse-param { NodeID   *root   }
 
 %param { yyscan_t scanner }
 
@@ -43,13 +43,13 @@ StmtID last_stmt = NO_ID;
 %token <StrID> TOK_IDENT
 %token <int64_t> TOK_NUM
 
-%type <StmtID> input
-%type <StmtID> seq
-%type <StmtID> stmt
-%type <StmtID> decl
-%type <StmtID> asgn
-%type <StmtID> retn
-%type <ExprID> expr
+%type <NodeID> input
+%type <NodeID> seq
+%type <NodeID> stmt
+%type <NodeID> decl
+%type <NodeID> asgn
+%type <NodeID> retn
+%type <NodeID> expr
 
 %type <Type> main_type
 
@@ -62,7 +62,7 @@ StmtID last_stmt = NO_ID;
 %%
 
 input: main_type TOK_MAIN "(" ")" "{" seq[body] "}" { 
-     *root = ast_main(ast, $1, $body);
+     *root = ast_mk_main(ast, $1, $body);
      }
 
 main_type
@@ -79,29 +79,29 @@ seq
 stmt: decl | asgn | retn;
 
 decl
-    : TOK_BOOL TOK_IDENT ";" { $$ = ast_declaration(ast, last_stmt, Type_BOOL, $2); last_stmt = $$; }
-    | TOK_INT TOK_IDENT ";"  { $$ = ast_declaration(ast, last_stmt, Type_INT, $2); last_stmt = $$; }
+    : TOK_BOOL TOK_IDENT ";" { $$ = ast_mk_decl(ast, last_stmt, Type_BOOL, $2); last_stmt = $$; }
+    | TOK_INT TOK_IDENT ";"  { $$ = ast_mk_decl(ast, last_stmt, Type_INT, $2); last_stmt = $$; }
     ;
 
-asgn: TOK_IDENT "=" expr ";" { $$ = ast_assignment(ast, last_stmt, $1, $3); last_stmt = $$; };
+asgn: TOK_IDENT "=" expr ";" { $$ = ast_mk_asgn(ast, last_stmt, $1, $3); last_stmt = $$; };
 
 retn
-    : TOK_RETURN ";"      { $$ = ast_ret(ast, last_stmt, NO_ID); last_stmt = $$; }
-    | TOK_RETURN expr ";" { $$ = ast_ret(ast, last_stmt, $2); last_stmt = $$; }
+    : TOK_RETURN ";"      { $$ = ast_mk_ret(ast, last_stmt, NO_ID); last_stmt = $$; }
+    | TOK_RETURN expr ";" { $$ = ast_mk_ret(ast, last_stmt, $2); last_stmt = $$; }
 
 expr
-    : expr[L] "+" expr[R] { $$ = ast_binary(ast, $L, $R, BinaryOp_ADD); }
-    | expr[L] "*" expr[R] { $$ = ast_binary(ast, $L, $R, BinaryOp_MUL); }
+    : expr[L] "+" expr[R] { $$ = ast_mk_binop(ast, $L, $R, BinOp_ADD); }
+    | expr[L] "*" expr[R] { $$ = ast_mk_binop(ast, $L, $R, BinOp_MUL); }
     | "(" expr[E] ")"     { $$ = $E; }
-    | TOK_IDENT           { $$ = ast_var(ast, $1); }
-    | TOK_NUM             { $$ = ast_int_constant(ast, $1); }
-    | TOK_TRUE            { $$ = ast_bool_constant(ast, true); }
-    | TOK_FALSE           { $$ = ast_bool_constant(ast, false); }
+    | TOK_IDENT           { $$ = ast_mk_var(ast, $1); }
+    | TOK_NUM             { $$ = ast_mk_int(ast, $1); }
+    | TOK_TRUE            { $$ = ast_mk_bool(ast, true); }
+    | TOK_FALSE           { $$ = ast_mk_bool(ast, false); }
     ;
 
 %%
 
-int yyerror(AST ast, StmtID *root, yyscan_t scanner, const char *msg) {
+int yyerror(Ast ast, NodeID *root, yyscan_t scanner, const char *msg) {
     (void) ast, (void) root, (void) scanner;
 
     fprintf(stderr, "error: %s\n", msg);

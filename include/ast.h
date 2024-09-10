@@ -14,106 +14,70 @@ extern "C" {
 #endif /* __cplusplus */
 
 typedef uint32_t NodeID;
-typedef uint32_t ExprID;
-typedef uint32_t StmtID;
 
 typedef enum {
-    BinaryOp_ADD,
-    BinaryOp_MUL,
-} BinaryOp;
+    BinOp_ADD,
+    BinOp_MUL,
+} BinOp;
 
+#define FOR_AST_NODES(DO)                                   \
+    /* expressions */                                       \
+    DO(BOOL_CONSTANT, bool)                                 \
+    DO(INT_CONSTANT, int64_t)                               \
+    DO(BINOP, struct { NodeID lhs; NodeID rhs; BinOp op; }) \
+    DO(VAR, StrID)                                          \
+    /* statements */                                        \
+    DO(DECL, struct { StrID var; Type type; })              \
+    DO(ASGN, struct { StrID var; NodeID expr; })            \
+    DO(RET, NodeID)                                         \
+    /* toplevel */                                          \
+    DO(MAIN, struct { NodeID body; Type ret_type; })        \
+
+#define MK_KINDS(name, type) AstNodeKind_ ## name,
 typedef enum {
-    ExpressionKind_BOOL_CONSTANT,
-    ExpressionKind_INT_CONSTANT,
-    ExpressionKind_BINARY,
-    ExpressionKind_VAR,
-} ExpressionKind;
+    FOR_AST_NODES(MK_KINDS)
+} AstNodeKind;
+#undef MK_KINDS
+
+#define MK_DATA(name, type) type name;
+typedef union {
+    FOR_AST_NODES(MK_DATA)
+} AstNodeData;
+#undef MK_DATA
 
 typedef union {
-    StrID var;
-    bool bool_constant;
-    int64_t int_constant;
-
-    struct {
-        ExprID lhs;
-        ExprID rhs;
-        BinaryOp op;
-    } binary;
-} ExpressionData;
+    Type expr_type;
+    NodeID stmt_next;
+} AstNodeHeader;
 
 typedef struct {
-    ExpressionKind kind;
-    ExpressionData data;
-    Type type;
-} Expression;
+    AstNodeKind kind;
+    AstNodeHeader header;
+    AstNodeData data;
+} AstNode;
 
-typedef enum {
-    StatementKind_DECLARATION,
-    StatementKind_ASSIGNMENT,
-    StatementKind_RETURN,
-    StatementKind_MAIN,
-} StatementKind;
 
-typedef enum {
-    PoolEntryKind_Expression,
-    PoolEntryKind_Statement,
-} PoolEntryKind;
-
-typedef union {
-    ExprID ret_val;
-
-    struct {
-        StrID ident;
-        Type type;
-    } declaration;
-
-    struct {
-        StrID ident;
-        ExprID expr;
-    } assignment;
-    struct {
-        Type type;
-        StmtID body;
-    } main;
-} StatementData;
-
-typedef struct {
-    StatementKind kind;
-    StatementData data;
-    StmtID next;
-} Statement;
-
-typedef union {
-    Expression expr;
-    Statement stmt;
-} PoolEntryData;
-
-typedef struct {
-    PoolEntryKind kind;
-    PoolEntryData data;
-} PoolEntry;
-
-struct Pool_S {
-    PoolEntry *entries;
+struct AstPool_S {
+    AstNode *data;
     size_t size;
     size_t capacity;
 };
 
-typedef struct Pool_S *AST;
+typedef struct AstPool_S *Ast;
 
 /**
  * @brief Create and initialize the AST
  *
  * @returns A valid instance of AST if sucessful, NULL otherwise
  */
-AST ast_initialize();
+Ast ast_initialize();
 
 /**
  * @brief Free the memory of the AST
  *
  * @note All IDs from the AST are considered invalid after calling this
  */
-void ast_release(AST self);
+void ast_release(Ast self);
 
 /**
  * @brief Push a 'return' Statement into the AST
@@ -123,7 +87,7 @@ void ast_release(AST self);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID ast_ret(AST self, StmtID prev, ExprID expr);
+NodeID ast_mk_ret(Ast self, NodeID prev, NodeID expr);
 
 /**
  * @brief Push a 'declaration' Statement into the AST
@@ -134,7 +98,7 @@ StmtID ast_ret(AST self, StmtID prev, ExprID expr);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID ast_declaration(AST self, StmtID prev, Type type, StrID ident);
+NodeID ast_mk_decl(Ast self, NodeID prev, Type type, StrID ident);
 
 /**
  * @brief Push an 'assignment' Statement into the AST
@@ -145,7 +109,7 @@ StmtID ast_declaration(AST self, StmtID prev, Type type, StrID ident);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr);
+NodeID ast_mk_asgn(Ast self, NodeID prev, StrID ident, NodeID expr);
 
 /**
  * @brief Push a 'main' Statement into the AST
@@ -155,7 +119,7 @@ StmtID ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-StmtID ast_main(AST self, Type type, StmtID body);
+NodeID ast_mk_main(Ast self, Type type, NodeID body);
 
 /**
  * @brief Push an 'integer constant' Expression into the AST
@@ -164,7 +128,7 @@ StmtID ast_main(AST self, Type type, StmtID body);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID ast_int_constant(AST self, int64_t constant);
+NodeID ast_mk_int(Ast self, int64_t constant);
 
 /**
  * @brief Push a 'boolean constant' Statement into the AST
@@ -173,7 +137,7 @@ ExprID ast_int_constant(AST self, int64_t constant);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID ast_bool_constant(AST self, bool constant);
+NodeID ast_mk_bool(Ast self, bool constant);
 
 /**
  * @brief Push a 'var' Statement into the AST
@@ -182,7 +146,7 @@ ExprID ast_bool_constant(AST self, bool constant);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID ast_var(AST self, StrID var);
+NodeID ast_mk_var(Ast self, StrID var);
 
 /**
  * @brief Push a 'binary' Statement into the AST
@@ -193,7 +157,7 @@ ExprID ast_var(AST self, StrID var);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op);
+NodeID ast_mk_binop(Ast self, NodeID lhs, NodeID rhs, BinOp op);
 
 /**
  * @brief Get a Statement from the AST
@@ -202,7 +166,7 @@ ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op);
  *
  * @returns A Statement if `id` represents a valid Statement, NULL otherwise
  */
-Statement *ast_get_stmt(const AST self, StmtID id);
+AstNode *ast_get_stmt(const Ast self, NodeID id);
 
 /**
  * @brief Get an Expression from the AST
@@ -211,7 +175,7 @@ Statement *ast_get_stmt(const AST self, StmtID id);
  *
  * @returns An Expression if `id` represents a valid Expression, NULL otherwise
  */
-Expression *ast_get_expr(const AST self, ExprID id);
+AstNode *ast_get_expr(const Ast self, NodeID id);
 
 #ifdef __cplusplus
 }

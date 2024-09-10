@@ -20,17 +20,17 @@ typedef struct Visitor_S *Visitor;
  * @return A newly initialized Visitor, or NULL if initialization fails.
  */
 Visitor init_visitor(
-    AST ast,
+    Ast ast,
     StrPool strs,
     void *additional_args,
-    Status (*visit_int_constant)(Visitor visitor, ExprID expr_id),
-    Status (*visit_bool_constant)(Visitor visitor, ExprID expr_id),
-    Status (*visit_var)(Visitor visitor, ExprID expr_id),
-    Status (*visit_binary_expr)(Visitor visitor, ExprID expr_id),
-    Status (*visit_declaration)(Visitor visitor, StmtID stmt_id),
-    Status (*visit_assignment)(Visitor visitor, StmtID stmt_id),
-    Status (*visit_return)(Visitor visitor, StmtID stmt_id),
-    Status (*visit_main)(Visitor visitor, StmtID stmt_id));
+    Status (*visit_int_constant)(Visitor visitor, NodeID expr_id),
+    Status (*visit_bool_constant)(Visitor visitor, NodeID expr_id),
+    Status (*visit_var)(Visitor visitor, NodeID expr_id),
+    Status (*visit_binary_expr)(Visitor visitor, NodeID expr_id),
+    Status (*visit_declaration)(Visitor visitor, NodeID stmt_id),
+    Status (*visit_assignment)(Visitor visitor, NodeID stmt_id),
+    Status (*visit_return)(Visitor visitor, NodeID stmt_id),
+    Status (*visit_main)(Visitor visitor, NodeID stmt_id));
 
 /**
  * @brief Traverses the AST from the given root node, visiting expressions
@@ -55,7 +55,7 @@ Status ast_visit(Visitor self, NodeID node_id);
  *
  * @return Status of the visit operation.
  */
-Status visit_expr(Visitor self, ExprID expr_id);
+Status visit_expr(Visitor self, NodeID expr_id);
 
 /**
  * @brief Visits a specific statement node within the AST.
@@ -68,7 +68,7 @@ Status visit_expr(Visitor self, ExprID expr_id);
  *
  * @return Status of the visit operation.
  */
-Status visit_stmt(Visitor self, StmtID stmt_id);
+Status visit_stmt(Visitor self, NodeID stmt_id);
 
 /**
  * @brief Releases the memory associated with a visitor.
@@ -97,7 +97,7 @@ void *visitor_get_additional_args(Visitor self);
  *
  * @return The AST being traversed.
  */
-AST visitor_get_ast(Visitor self);
+Ast visitor_get_ast(Visitor self);
 
 /**
  * @brief Retrieves the string pool associated with the visitor.
@@ -118,6 +118,6 @@ StrPool visitor_get_strs(Visitor self);
  * @param[in] node_id The ID of a valid statement or expression in the AST.
  * @param[in] stream The output handle where the AST subtree will be printed.
  */
-void ast_display(const AST ast, NodeID node_id, StrPool strs, FILE *stream);
+void ast_display(const Ast ast, NodeID node_id, StrPool strs, FILE *stream);
 
 #endif // AST_VISITOR_H

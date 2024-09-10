@@ -12,7 +12,7 @@
 %}
 
 %option outfile="src/lexer.c" header-file="include/lexer.h"
-%option warn nodefault
+%option warn nodefault noyywrap nounput
 
 %option reentrant noyywrap never-interactive nounistd
 %option bison-bridge

@@ -7,9 +7,9 @@
 
 int main(int argc, char *argv[]) {
     // yydebug = 1;
-    AST ast = ast_initialize();
+    Ast ast = ast_initialize();
     StrPool strs = str_pool_init();
-    ExprID root = NO_ID;
+    NodeID root = NO_ID;
 
     yyscan_t scanner;
     if (yylex_init(&scanner)) {

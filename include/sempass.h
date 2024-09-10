@@ -20,6 +20,6 @@
  * @returns Status_OK if the semantic analysis is successful, or an appropriate
  * error status otherwise.
  */
-Status sempass(const AST ast, NodeID node_id, StrPool strs);
+Status sempass(const Ast ast, NodeID node_id, StrPool strs);
 
 #endif // SEMPASS_H

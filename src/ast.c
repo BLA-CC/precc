@@ -9,17 +9,17 @@
 // constructor & destructor
 //
 
-AST ast_initialize() {
-    AST self = (AST)calloc(1, sizeof(*self));
+Ast ast_initialize() {
+    Ast self = (Ast)calloc(1, sizeof(*self));
     return self;
 }
 
-void ast_release(AST self) {
+void ast_release(Ast self) {
     if (self == NULL) {
         return;
     }
 
-    free(self->entries);
+    free(self->data);
     free(self);
 }
 
@@ -27,21 +27,21 @@ void ast_release(AST self) {
 // tree construction
 //
 
-static inline bool _should_reallocate(AST self) {
+static inline bool _should_reallocate(Ast self) {
     return self->size == self->capacity;
 }
 
-static bool _try_reallocate(AST self) {
-    PoolEntry *dummy = NULL;
+static bool _try_reallocate(Ast self) {
+    AstNode *dummy = NULL;
     size_t new_capacity = 0;
 
     if (self->capacity == 0) {
         new_capacity = DEFAULT_CAPACITY;
-        dummy = (PoolEntry *)calloc(new_capacity, sizeof(*dummy));
+        dummy = (AstNode *)calloc(new_capacity, sizeof(*dummy));
     } else {
         new_capacity = 2 * self->capacity;
         dummy =
-            (PoolEntry *)realloc(self->entries, new_capacity * sizeof(*dummy));
+            (AstNode *)realloc(self->data, new_capacity * sizeof(*dummy));
     }
 
     if (dummy == NULL) {
@@ -49,12 +49,12 @@ static bool _try_reallocate(AST self) {
     }
 
     self->capacity = new_capacity;
-    self->entries = dummy;
+    self->data = dummy;
 
     return true;
 }
 
-static NodeID _push(AST self, const PoolEntry *entry) {
+static NodeID _push(Ast self, const AstNode *entry) {
     if (_should_reallocate(self)) {
         bool reallocate_success = _try_reallocate(self);
 
@@ -63,7 +63,7 @@ static NodeID _push(AST self, const PoolEntry *entry) {
         }
     }
 
-    memcpy(self->entries + self->size, entry, sizeof(*entry));
+    memcpy(self->data + self->size, entry, sizeof(*entry));
 
     NodeID id = self->size;
     ++self->size;
@@ -71,79 +71,67 @@ static NodeID _push(AST self, const PoolEntry *entry) {
     return id;
 }
 
-StmtID ast_ret(AST self, StmtID prev, ExprID expr) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Statement,
-        .data = { .stmt = {
-            .kind = StatementKind_RETURN,
-            .data = { .ret_val = expr },
-            .next = NO_ID,
+NodeID ast_mk_ret(Ast self, NodeID prev, NodeID expr) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_RET,
+        .header = { .stmt_next = NO_ID },
+        .data = { .RET = expr },
+    };
+
+    NodeID node_id = _push(self, &entry);
+
+    if (prev != NO_ID) {
+        self->data[prev].header.stmt_next = node_id;
+    }
+
+    return node_id;
+}
+
+NodeID ast_mk_decl(Ast self, NodeID prev, Type type, StrID ident) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_DECL,
+        .header = { .stmt_next = NO_ID },
+        .data = { .DECL = {
+            .var = ident,
+            .type = type,
         } },
     };
 
     NodeID node_id = _push(self, &entry);
 
     if (prev != NO_ID) {
-        self->entries[prev].data.stmt.next = node_id;
+        self->data[prev].header.stmt_next = node_id;
     }
 
     return node_id;
 }
 
-StmtID ast_declaration(AST self, StmtID prev, Type type, StrID ident) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Statement,
-        .data = { .stmt = {
-            .kind = StatementKind_DECLARATION,
-            .data = { .declaration = {
-                .ident = ident,
-                .type = type,
-            } },
-            .next = NO_ID,
+NodeID ast_mk_asgn(Ast self, NodeID prev, StrID ident, NodeID expr) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_ASGN,
+        .header = { .stmt_next = NO_ID },
+        .data = { .ASGN = {
+            .var = ident,
+            .expr = expr,
         } },
     };
 
     NodeID node_id = _push(self, &entry);
 
     if (prev != NO_ID) {
-        self->entries[prev].data.stmt.next = node_id;
+        self->data[prev].header.stmt_next = node_id;
     }
 
     return node_id;
 }
 
-StmtID ast_assignment(AST self, StmtID prev, StrID ident, ExprID expr) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Statement,
-        .data = { .stmt = {
-            .kind = StatementKind_ASSIGNMENT,
-            .data = { .assignment = {
-                .ident = ident,
-                .expr = expr,
-            } },
-            .next = NO_ID,
-        } },
-    };
-
-    NodeID node_id = _push(self, &entry);
-
-    if (prev != NO_ID) {
-        self->entries[prev].data.stmt.next = node_id;
-    }
-
-    return node_id;
-}
-
-StmtID ast_main(AST self, Type type, StmtID body) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Statement,
-        .data = { .stmt = {
-            .kind = StatementKind_MAIN,
-            .data = { .main = {
-                .type = type,
-                .body = body,
-            } },
-            .next = NO_ID,
+NodeID ast_mk_main(Ast self, Type type, NodeID body) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_MAIN,
+        .header = { .stmt_next = NO_ID },
+        .data = { .MAIN = {
+            .ret_type = type,
+            .body = body,
         } },
     };
 
@@ -151,55 +139,47 @@ StmtID ast_main(AST self, Type type, StmtID body) {
     return node_id;
 }
 
-ExprID ast_int_constant(AST self, int64_t constant) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Expression,
-        .data = { .expr = {
-            .kind = ExpressionKind_INT_CONSTANT,
-            .data = { .int_constant = constant },
-        } },
+NodeID ast_mk_int(Ast self, int64_t constant) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_INT_CONSTANT,
+        .header = {},
+        .data = { .INT_CONSTANT = constant },
     };
 
     NodeID node_id = _push(self, &entry);
     return node_id;
 }
 
-ExprID ast_bool_constant(AST self, bool constant) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Expression,
-        .data = { .expr = {
-            .kind = ExpressionKind_BOOL_CONSTANT,
-            .data = { .bool_constant = constant },
-        } },
+NodeID ast_mk_bool(Ast self, bool constant) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_BOOL_CONSTANT,
+        .header = {},
+        .data = { .BOOL_CONSTANT = constant },
     };
 
     NodeID node_id = _push(self, &entry);
     return node_id;
 }
 
-ExprID ast_var(AST self, StrID var) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Expression,
-        .data = { .expr = {
-            .kind = ExpressionKind_VAR,
-            .data = { .var = var },
-        } },
+NodeID ast_mk_var(Ast self, StrID var) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_VAR,
+        .header = {},
+        .data = { .VAR = var },
     };
 
     NodeID node_id = _push(self, &entry);
     return node_id;
 }
 
-ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op) {
-    PoolEntry entry = (PoolEntry){
-        .kind = PoolEntryKind_Expression,
-        .data = { .expr = {
-            .kind = ExpressionKind_BINARY,
-            .data = { .binary = {
-                .op = op,
-                .lhs = lhs,
-                .rhs = rhs,
-            } },
+NodeID ast_mk_binop(Ast self, NodeID lhs, NodeID rhs, BinOp op) {
+    AstNode entry = (AstNode){
+        .kind = AstNodeKind_BINOP,
+        .header = {},
+        .data = { .BINOP = {
+            .op = op,
+            .lhs = lhs,
+            .rhs = rhs,
         } },
     };
 
@@ -211,30 +191,30 @@ ExprID ast_binary(AST self, ExprID lhs, ExprID rhs, BinaryOp op) {
 // utility
 //
 
-Statement *ast_get_stmt(const AST self, StmtID id) {
+AstNode *ast_get_stmt(const Ast self, NodeID id) {
     if (self->size <= id) {
         return NULL;
     }
 
-    PoolEntry *entry = &self->entries[id];
+    AstNode *entry = &self->data[id];
 
-    if (entry->kind != PoolEntryKind_Statement) {
+    if (entry->kind < AstNodeKind_DECL) {
         return NULL;
     }
 
-    return &entry->data.stmt;
+    return entry;
 }
 
-Expression *ast_get_expr(const AST self, ExprID id) {
+AstNode *ast_get_expr(const Ast self, NodeID id) {
     if (self->size <= id) {
         return NULL;
     }
 
-    PoolEntry *entry = &self->entries[id];
+    AstNode *entry = &self->data[id];
 
-    if (entry->kind != PoolEntryKind_Expression) {
+    if (entry->kind >= AstNodeKind_DECL) {
         return NULL;
     }
 
-    return &entry->data.expr;
+    return entry;
 }
