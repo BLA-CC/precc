@@ -15,6 +15,11 @@ extern "C" {
 
 typedef uint32_t NodeID;
 
+typedef struct {
+    uint32_t line;
+    uint32_t col;
+} Location;
+
 typedef enum {
     BinOp_ADD,
     BinOp_MUL,
@@ -51,11 +56,11 @@ typedef union {
 } AstNodeHeader;
 
 typedef struct {
+    Location loc;
     AstNodeKind kind;
     AstNodeHeader header;
     AstNodeData data;
 } AstNode;
-
 
 struct AstPool_S {
     AstNode *data;
@@ -87,7 +92,7 @@ void ast_release(Ast self);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_ret(Ast self, NodeID prev, NodeID expr);
+NodeID ast_mk_ret(Ast self, Location loc, NodeID prev, NodeID expr);
 
 /**
  * @brief Push a 'declaration' Statement into the AST
@@ -98,7 +103,7 @@ NodeID ast_mk_ret(Ast self, NodeID prev, NodeID expr);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_decl(Ast self, NodeID prev, Type type, StrID ident);
+NodeID ast_mk_decl(Ast self, Location loc, NodeID prev, Type type, StrID ident);
 
 /**
  * @brief Push an 'assignment' Statement into the AST
@@ -109,7 +114,7 @@ NodeID ast_mk_decl(Ast self, NodeID prev, Type type, StrID ident);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_asgn(Ast self, NodeID prev, StrID ident, NodeID expr);
+NodeID ast_mk_asgn(Ast self, Location loc, NodeID prev, StrID ident, NodeID expr);
 
 /**
  * @brief Push a 'main' Statement into the AST
@@ -119,7 +124,7 @@ NodeID ast_mk_asgn(Ast self, NodeID prev, StrID ident, NodeID expr);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_main(Ast self, Type type, NodeID body);
+NodeID ast_mk_main(Ast self, Location loc, Type type, NodeID body);
 
 /**
  * @brief Push an 'integer constant' Expression into the AST
@@ -128,7 +133,7 @@ NodeID ast_mk_main(Ast self, Type type, NodeID body);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_int(Ast self, int64_t constant);
+NodeID ast_mk_int(Ast self, Location loc, int64_t constant);
 
 /**
  * @brief Push a 'boolean constant' Statement into the AST
@@ -137,7 +142,7 @@ NodeID ast_mk_int(Ast self, int64_t constant);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_bool(Ast self, bool constant);
+NodeID ast_mk_bool(Ast self, Location loc, bool constant);
 
 /**
  * @brief Push a 'var' Statement into the AST
@@ -146,7 +151,7 @@ NodeID ast_mk_bool(Ast self, bool constant);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_var(Ast self, StrID var);
+NodeID ast_mk_var(Ast self, Location loc, StrID var);
 
 /**
  * @brief Push a 'binary' Statement into the AST
@@ -157,7 +162,7 @@ NodeID ast_mk_var(Ast self, StrID var);
  *
  * @returns The ID of the new node if successful, NO_ID otherwise
  */
-NodeID ast_mk_binop(Ast self, NodeID lhs, NodeID rhs, BinOp op);
+NodeID ast_mk_binop(Ast self, Location loc, NodeID lhs, NodeID rhs, BinOp op);
 
 /**
  * @brief Get a Statement from the AST

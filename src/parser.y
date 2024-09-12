@@ -9,9 +9,21 @@
 #include "lexer.h"
 #include "str_pool.h"
 
-int yyerror(AST ast, StmtID *root, yyscan_t scanner, const char *msg);
+int yyerror(YYLTYPE *loc, Ast ast, NodeID *root, yyscan_t scanner, const char *msg);
 
 NodeID last_stmt = NO_ID;
+
+
+# define YYLLOC_DEFAULT(Cur, Rhs, N)        \
+do                                          \
+    if (N) {                                \
+        (Cur).line = YYRHSLOC(Rhs, 1).line; \
+        (Cur).col = YYRHSLOC(Rhs, 1).col;   \
+    } else {                                \
+        (Cur).line = YYRHSLOC(Rhs, 0).line; \
+        (Cur).col = YYRHSLOC(Rhs, 0).col;   \
+    }                                       \
+while (0)
 
 %}
 
@@ -25,8 +37,15 @@ NodeID last_stmt = NO_ID;
 %define api.pure
 %define api.value.type union
 %define parse.trace
-%parse-param { Ast ast    }
-%parse-param { NodeID   *root   }
+%define parse.error verbose
+%locations
+%define api.location.type {Location}
+%parse-param { Ast ast }
+%parse-param { NodeID *root }
+%initial-action {
+    @$.line = 1;
+    @$.col = 1;
+}
 
 %param { yyscan_t scanner }
 
@@ -40,8 +59,9 @@ NodeID last_stmt = NO_ID;
 %token TOK_LCURLY    "{"
 %token TOK_RCURLY    "}"
 %token TOK_SEMICOLON ";"
-%token <StrID> TOK_IDENT
-%token <int64_t> TOK_NUM
+%token <StrID> TOK_IDENT "identifier"
+%token <int64_t> TOK_NUM "number"
+%token TOK_ILLEGAL_CHAR "illegal character"
 
 %type <NodeID> input
 %type <NodeID> seq
@@ -62,7 +82,8 @@ NodeID last_stmt = NO_ID;
 %%
 
 input: main_type TOK_MAIN "(" ")" "{" seq[body] "}" { 
-     *root = ast_mk_main(ast, $1, $body);
+     *root = ast_mk_main(ast, @2, $1, $body);
+     return yynerrs;
      }
 
 main_type
@@ -76,34 +97,34 @@ seq
     | seq stmt { $$ = $1 == NO_ID ? $2 : $1; }
     ;
 
-stmt: decl | asgn | retn;
+stmt: decl | asgn | retn | error ";" { yyerrok; };
 
 decl
-    : TOK_BOOL TOK_IDENT ";" { $$ = ast_mk_decl(ast, last_stmt, Type_BOOL, $2); last_stmt = $$; }
-    | TOK_INT TOK_IDENT ";"  { $$ = ast_mk_decl(ast, last_stmt, Type_INT, $2); last_stmt = $$; }
+    : TOK_BOOL TOK_IDENT ";" { $$ = ast_mk_decl(ast, @2, last_stmt, Type_BOOL, $2); last_stmt = $$; }
+    | TOK_INT TOK_IDENT ";"  { $$ = ast_mk_decl(ast, @2, last_stmt, Type_INT, $2); last_stmt = $$; }
     ;
 
-asgn: TOK_IDENT "=" expr ";" { $$ = ast_mk_asgn(ast, last_stmt, $1, $3); last_stmt = $$; };
+asgn: TOK_IDENT "=" expr ";" { $$ = ast_mk_asgn(ast, @2, last_stmt, $1, $3); last_stmt = $$; };
 
 retn
-    : TOK_RETURN ";"      { $$ = ast_mk_ret(ast, last_stmt, NO_ID); last_stmt = $$; }
-    | TOK_RETURN expr ";" { $$ = ast_mk_ret(ast, last_stmt, $2); last_stmt = $$; }
+    : TOK_RETURN ";"      { $$ = ast_mk_ret(ast, @1, last_stmt, NO_ID); last_stmt = $$; }
+    | TOK_RETURN expr ";" { $$ = ast_mk_ret(ast, @1, last_stmt, $2); last_stmt = $$; }
 
 expr
-    : expr[L] "+" expr[R] { $$ = ast_mk_binop(ast, $L, $R, BinOp_ADD); }
-    | expr[L] "*" expr[R] { $$ = ast_mk_binop(ast, $L, $R, BinOp_MUL); }
+    : expr[L] "+" expr[R] { $$ = ast_mk_binop(ast, @2, $L, $R, BinOp_ADD); }
+    | expr[L] "*" expr[R] { $$ = ast_mk_binop(ast, @2, $L, $R, BinOp_MUL); }
     | "(" expr[E] ")"     { $$ = $E; }
-    | TOK_IDENT           { $$ = ast_mk_var(ast, $1); }
-    | TOK_NUM             { $$ = ast_mk_int(ast, $1); }
-    | TOK_TRUE            { $$ = ast_mk_bool(ast, true); }
-    | TOK_FALSE           { $$ = ast_mk_bool(ast, false); }
+    | TOK_IDENT           { $$ = ast_mk_var(ast, @1, $1); }
+    | TOK_NUM             { $$ = ast_mk_int(ast, @1, $1); }
+    | TOK_TRUE            { $$ = ast_mk_bool(ast, @1, true); }
+    | TOK_FALSE           { $$ = ast_mk_bool(ast, @1, false); }
     ;
 
 %%
 
-int yyerror(Ast ast, NodeID *root, yyscan_t scanner, const char *msg) {
+int yyerror(YYLTYPE *loc, Ast ast, NodeID *root, yyscan_t scanner, const char *msg) {
     (void) ast, (void) root, (void) scanner;
 
-    fprintf(stderr, "error: %s\n", msg);
+    fprintf(stderr, "%d:%d: %s\n", loc->line, loc->col, msg);
     return 1;
 }

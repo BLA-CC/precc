@@ -71,9 +71,10 @@ static NodeID _push(Ast self, const AstNode *entry) {
     return id;
 }
 
-NodeID ast_mk_ret(Ast self, NodeID prev, NodeID expr) {
+NodeID ast_mk_ret(Ast self, Location loc, NodeID prev, NodeID expr) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_RET,
+        .loc = loc,
         .header = { .stmt_next = NO_ID },
         .data = { .RET = expr },
     };
@@ -87,9 +88,10 @@ NodeID ast_mk_ret(Ast self, NodeID prev, NodeID expr) {
     return node_id;
 }
 
-NodeID ast_mk_decl(Ast self, NodeID prev, Type type, StrID ident) {
+NodeID ast_mk_decl(Ast self, Location loc, NodeID prev, Type type, StrID ident) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_DECL,
+        .loc = loc,
         .header = { .stmt_next = NO_ID },
         .data = { .DECL = {
             .var = ident,
@@ -106,9 +108,10 @@ NodeID ast_mk_decl(Ast self, NodeID prev, Type type, StrID ident) {
     return node_id;
 }
 
-NodeID ast_mk_asgn(Ast self, NodeID prev, StrID ident, NodeID expr) {
+NodeID ast_mk_asgn(Ast self, Location loc, NodeID prev, StrID ident, NodeID expr) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_ASGN,
+        .loc = loc,
         .header = { .stmt_next = NO_ID },
         .data = { .ASGN = {
             .var = ident,
@@ -125,9 +128,10 @@ NodeID ast_mk_asgn(Ast self, NodeID prev, StrID ident, NodeID expr) {
     return node_id;
 }
 
-NodeID ast_mk_main(Ast self, Type type, NodeID body) {
+NodeID ast_mk_main(Ast self, Location loc, Type type, NodeID body) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_MAIN,
+        .loc = loc,
         .header = { .stmt_next = NO_ID },
         .data = { .MAIN = {
             .ret_type = type,
@@ -139,9 +143,10 @@ NodeID ast_mk_main(Ast self, Type type, NodeID body) {
     return node_id;
 }
 
-NodeID ast_mk_int(Ast self, int64_t constant) {
+NodeID ast_mk_int(Ast self, Location loc, int64_t constant) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_INT_CONSTANT,
+        .loc = loc,
         .header = {},
         .data = { .INT_CONSTANT = constant },
     };
@@ -150,9 +155,10 @@ NodeID ast_mk_int(Ast self, int64_t constant) {
     return node_id;
 }
 
-NodeID ast_mk_bool(Ast self, bool constant) {
+NodeID ast_mk_bool(Ast self, Location loc, bool constant) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_BOOL_CONSTANT,
+        .loc = loc,
         .header = {},
         .data = { .BOOL_CONSTANT = constant },
     };
@@ -161,9 +167,10 @@ NodeID ast_mk_bool(Ast self, bool constant) {
     return node_id;
 }
 
-NodeID ast_mk_var(Ast self, StrID var) {
+NodeID ast_mk_var(Ast self, Location loc, StrID var) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_VAR,
+        .loc = loc,
         .header = {},
         .data = { .VAR = var },
     };
@@ -172,9 +179,10 @@ NodeID ast_mk_var(Ast self, StrID var) {
     return node_id;
 }
 
-NodeID ast_mk_binop(Ast self, NodeID lhs, NodeID rhs, BinOp op) {
+NodeID ast_mk_binop(Ast self, Location loc, NodeID lhs, NodeID rhs, BinOp op) {
     AstNode entry = (AstNode){
         .kind = AstNodeKind_BINOP,
+        .loc = loc,
         .header = {},
         .data = { .BINOP = {
             .op = op,
