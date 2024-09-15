@@ -44,8 +44,8 @@ Status _tyck_bool_constant(Visitor v, NodeID e_id) {
 
 Status _tyck_var(Visitor v, NodeID e_id) {
     AstNode *e = ast_get_expr(visitor_get_ast(v), e_id);
-    SymNode symnode = symtable_get_info(
-        (SymTable)visitor_get_additional_args(v), e->data.VAR);
+    SymNode symnode =
+        symtable_get_info((SymTable)visitor_get_context(v), e->data.VAR);
 
     if (symnode == NULL) {
         error_msg(
@@ -54,7 +54,7 @@ Status _tyck_var(Visitor v, NodeID e_id) {
         return Status_UndeclSymbol;
     }
 
-    e->header.expr_type= symnode_get_symbol(symnode).type;
+    e->header.expr_type = symnode_get_symbol(symnode).type;
     return Status_OK;
 }
 
@@ -79,7 +79,7 @@ Status _tyck_binary_expr(Visitor v, NodeID e_id) {
 }
 
 Status _tyck_declaration(Visitor v, NodeID s_id) {
-    SymTable sym_table = (SymTable)visitor_get_additional_args(v);
+    SymTable sym_table = (SymTable)visitor_get_context(v);
     AstNode *stmt = ast_get_stmt(visitor_get_ast(v), s_id);
 
     if (symtable_get_info(sym_table, stmt->data.DECL.var) != NULL) {
@@ -89,8 +89,7 @@ Status _tyck_declaration(Visitor v, NodeID s_id) {
         return Status_MultiDeclSymbol;
     }
 
-    symtable_add_symbol(
-        sym_table, stmt->data.DECL.var, stmt->data.DECL.type);
+    symtable_add_symbol(sym_table, stmt->data.DECL.var, stmt->data.DECL.type);
     return Status_OK;
 }
 
@@ -99,7 +98,7 @@ Status _tyck_assignment(Visitor v, NodeID s_id) {
     AstNode *stmt = ast_get_stmt(ast, s_id);
 
     SymNode symnode = symtable_get_info(
-        (SymTable)visitor_get_additional_args(v), stmt->data.DECL.var);
+        (SymTable)visitor_get_context(v), stmt->data.DECL.var);
 
     if (symnode == NULL) {
         error_msg(
@@ -127,7 +126,7 @@ Status _tyck_return(Visitor v, NodeID s_id) {
     pending_return = false;
     Type main_sym_type =
         symnode_get_symbol(symtable_get_info(
-                               (SymTable)visitor_get_additional_args(v),
+                               (SymTable)visitor_get_context(v),
                                str_pool_put(visitor_get_strs(v), MAIN_STR)))
             .type;
 
@@ -160,7 +159,7 @@ Status _tyck_main(Visitor v, NodeID s_id) {
     pending_return = stmt->data.MAIN.ret_type != Type_VOID;
 
     symtable_add_symbol(
-        (SymTable)visitor_get_additional_args(v),
+        (SymTable)visitor_get_context(v),
         str_pool_put(visitor_get_strs(v), MAIN_STR),
         stmt->data.MAIN.ret_type);
 

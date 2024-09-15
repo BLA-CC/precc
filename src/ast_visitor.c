@@ -11,7 +11,7 @@
 struct Visitor_S {
     Ast ast;
     StrPool strs;
-    void *additional_args;
+    void *context;
 
     /* Expression visitors */
     Status (*visit_int_constant)(Visitor visitor, NodeID expr_id);
@@ -29,7 +29,7 @@ struct Visitor_S {
 Visitor init_visitor(
     Ast ast,
     StrPool strs,
-    void *additional_args,
+    void *context,
     Status (*visit_int_constant)(Visitor visitor, NodeID expr_id),
     Status (*visit_bool_constant)(Visitor visitor, NodeID expr_id),
     Status (*visit_var)(Visitor visitor, NodeID expr_id),
@@ -43,7 +43,7 @@ Visitor init_visitor(
     Visitor visitor = malloc(sizeof(struct Visitor_S));
     visitor->ast = ast;
     visitor->strs = strs;
-    visitor->additional_args = additional_args;
+    visitor->context = context;
     visitor->visit_int_constant = visit_int_constant;
     visitor->visit_bool_constant = visit_bool_constant;
     visitor->visit_var = visit_var;
@@ -129,8 +129,8 @@ void visitor_release(Visitor self) {
 }
 
 // getter
-void *visitor_get_additional_args(Visitor self) {
-    return self->additional_args;
+void *visitor_get_context(Visitor self) {
+    return self->context;
 }
 
 Ast visitor_get_ast(Visitor self) {
@@ -180,7 +180,7 @@ static const char *_str_bool(bool val) {
 }
 
 Status display_int_constant(Visitor visitor, NodeID expr_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *expr = ast_get_expr(visitor->ast, expr_id);
 
     fprintf(stream, "%" PRIi64 "", expr->data.INT_CONSTANT);
@@ -188,7 +188,7 @@ Status display_int_constant(Visitor visitor, NodeID expr_id) {
 }
 
 Status display_bool_constant(Visitor visitor, NodeID expr_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *expr = ast_get_expr(visitor->ast, expr_id);
     fprintf(stream, "%s", _str_bool(expr->data.BOOL_CONSTANT));
 
@@ -196,7 +196,7 @@ Status display_bool_constant(Visitor visitor, NodeID expr_id) {
 }
 
 Status display_var(Visitor visitor, NodeID expr_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *expr = ast_get_expr(visitor->ast, expr_id);
 
     fprintf(stream, "%s", str_pool_get(visitor->strs, expr->data.VAR));
@@ -204,7 +204,7 @@ Status display_var(Visitor visitor, NodeID expr_id) {
 }
 
 Status display_binary_expr(Visitor visitor, NodeID expr_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *expr = ast_get_expr(visitor->ast, expr_id);
 
     fprintf(stream, "(");
@@ -216,7 +216,7 @@ Status display_binary_expr(Visitor visitor, NodeID expr_id) {
 }
 
 Status display_declaration(Visitor visitor, NodeID stmt_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *stmt = ast_get_stmt(visitor->ast, stmt_id);
 
     fprintf(
@@ -229,20 +229,17 @@ Status display_declaration(Visitor visitor, NodeID stmt_id) {
 }
 
 Status display_assignment(Visitor visitor, NodeID stmt_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *stmt = ast_get_stmt(visitor->ast, stmt_id);
 
-    fprintf(
-        stream,
-        "%s = ",
-        str_pool_get(visitor->strs, stmt->data.ASGN.var));
+    fprintf(stream, "%s = ", str_pool_get(visitor->strs, stmt->data.ASGN.var));
     visit_expr(visitor, stmt->data.ASGN.expr);
     fprintf(stream, ";\n");
     return 0;
 }
 
 Status display_return(Visitor visitor, NodeID stmt_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *stmt = ast_get_stmt(visitor->ast, stmt_id);
 
     fprintf(stream, "return");
@@ -255,7 +252,7 @@ Status display_return(Visitor visitor, NodeID stmt_id) {
 }
 
 Status display_main(Visitor visitor, NodeID stmt_id) {
-    FILE *stream = (FILE *)visitor->additional_args;
+    FILE *stream = (FILE *)visitor->context;
     AstNode *stmt = ast_get_stmt(visitor->ast, stmt_id);
 
     fprintf(stream, "%s main() {\n", _str_type(stmt->data.MAIN.ret_type));

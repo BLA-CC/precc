@@ -22,7 +22,7 @@ typedef struct Visitor_S *Visitor;
 Visitor init_visitor(
     Ast ast,
     StrPool strs,
-    void *additional_args,
+    void *context,
     Status (*visit_int_constant)(Visitor visitor, NodeID expr_id),
     Status (*visit_bool_constant)(Visitor visitor, NodeID expr_id),
     Status (*visit_var)(Visitor visitor, NodeID expr_id),
@@ -88,7 +88,7 @@ void visitor_release(Visitor self);
  *
  * @return Pointer to the user-provided additional arguments.
  */
-void *visitor_get_additional_args(Visitor self);
+void *visitor_get_context(Visitor self);
 
 /**
  * @brief Retrieves the AST associated with the visitor.
