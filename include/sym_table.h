@@ -69,7 +69,7 @@ void symtable_release(SymTable self);
  *
  * @returns The symbol structure containing information about the symbol.
  */
-Sym symnode_get_symbol(SymNode symnode);
+Sym *symnode_get_symbol(SymNode symnode);
 
 #ifdef __cplusplus
 }

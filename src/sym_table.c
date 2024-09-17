@@ -16,8 +16,8 @@ struct SymNode_S {
     SymNode _next;
 };
 
-Sym symnode_get_symbol(SymNode symnode) {
-    return symnode->symbol;
+Sym *symnode_get_symbol(SymNode symnode) {
+    return &symnode->symbol;
 }
 
 SymNode _create_symbol(const StrID ident, const Type type) {
@@ -106,7 +106,6 @@ SymNode symtable_get_info(const SymTable self, StrID ident) {
 }
 
 void symtable_add_symbol(SymTable self, const StrID ident, const Type type) {
-
     SymNode symnode = _create_symbol(ident, type);
     _symtable_insert(self, symnode);
 }
