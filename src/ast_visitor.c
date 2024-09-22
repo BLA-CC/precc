@@ -12,6 +12,7 @@ struct Visitor_S {
     Ast ast;
     StrPool strs;
     void *context;
+    bool interrupt;
 
     /* Expression visitors */
     Status (*visit_int_constant)(Visitor visitor, NodeID expr_id);
@@ -40,22 +41,29 @@ Visitor init_visitor(
     Status (*visit_main)(Visitor visitor, NodeID stmt_id)) {
     // TODO: We could define some generic visits if some of the
     // pointers are NULL
-    Visitor visitor = malloc(sizeof(struct Visitor_S));
-    visitor->ast = ast;
-    visitor->strs = strs;
-    visitor->context = context;
-    visitor->visit_int_constant = visit_int_constant;
-    visitor->visit_bool_constant = visit_bool_constant;
-    visitor->visit_var = visit_var;
-    visitor->visit_binary_expr = visit_binary_expr;
-    visitor->visit_declaration = visit_declaration;
-    visitor->visit_assignment = visit_assignment;
-    visitor->visit_return = visit_return;
-    visitor->visit_main = visit_main;
-    return visitor;
+
+    Visitor self = malloc(sizeof(*self));
+    self->interrupt = false;
+    self->ast = ast;
+    self->strs = strs;
+    self->context = context;
+    self->visit_int_constant = visit_int_constant;
+    self->visit_bool_constant = visit_bool_constant;
+    self->visit_var = visit_var;
+    self->visit_binary_expr = visit_binary_expr;
+    self->visit_declaration = visit_declaration;
+    self->visit_assignment = visit_assignment;
+    self->visit_return = visit_return;
+    self->visit_main = visit_main;
+
+    return self;
 }
 
 Status visit_expr(Visitor self, NodeID expr_id) {
+    if (self->interrupt) {
+        return Status_OK;
+    }
+
     AstNode *expr = ast_get_expr(self->ast, expr_id);
     Status s;
 
@@ -81,6 +89,10 @@ Status visit_expr(Visitor self, NodeID expr_id) {
 }
 
 Status visit_stmt(Visitor self, NodeID stmt_id) {
+    if (self->interrupt) {
+        return Status_OK;
+    }
+
     AstNode *stmt = ast_get_stmt(self->ast, stmt_id);
 
     if (stmt == NULL) {
@@ -122,6 +134,10 @@ Status ast_visit(Visitor self, NodeID node_id) {
     }
 
     return visit_stmt(self, node_id);
+}
+
+void visitor_interrupt(Visitor self) {
+    self->interrupt = true;
 }
 
 void visitor_release(Visitor self) {

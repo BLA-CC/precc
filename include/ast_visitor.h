@@ -71,6 +71,14 @@ Status visit_expr(Visitor self, NodeID expr_id);
 Status visit_stmt(Visitor self, NodeID stmt_id);
 
 /**
+ * @brief Interrupt the flow of the visitor, effectively stopping
+ * traversal of the AST.
+ *
+ * @param[in] self The visitor performing the traversal.
+ */
+void visitor_interrupt(Visitor self);
+
+/**
  * @brief Releases the memory associated with a visitor.
  *
  * This function frees all memory allocated by the visitor, including any
