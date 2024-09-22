@@ -83,6 +83,12 @@ Status visit_expr(Visitor self, NodeID expr_id) {
     case AstNodeKind_BINOP:
         s = self->visit_binary_expr(self, expr_id);
         break;
+
+    case AstNodeKind_DECL:
+    case AstNodeKind_ASGN:
+    case AstNodeKind_RET:
+    case AstNodeKind_MAIN:
+        return Status_InternalError;
     }
 
     return s;
@@ -116,6 +122,12 @@ Status visit_stmt(Visitor self, NodeID stmt_id) {
     case AstNodeKind_MAIN:
         s = self->visit_main(self, stmt_id);
         break;
+
+    case AstNodeKind_BINOP:
+    case AstNodeKind_VAR:
+    case AstNodeKind_INT_CONSTANT:
+    case AstNodeKind_BOOL_CONSTANT:
+        return Status_InternalError;
     }
 
     Status next_s = Status_OK;
