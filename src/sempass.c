@@ -54,7 +54,7 @@ Status _tyck_var(Visitor v, NodeID e_id) {
         return Status_UndeclSymbol;
     }
 
-    e->header.expr_type = symnode_get_symbol(symnode).type;
+    e->header.expr_type = symnode_get_symbol(symnode)->type;
     return Status_OK;
 }
 
@@ -114,7 +114,7 @@ Status _tyck_assignment(Visitor v, NodeID s_id) {
 
     Type expr_type = ast_get_expr(ast, stmt->data.ASGN.expr)->header.expr_type;
 
-    if (symnode_get_symbol(symnode).type != expr_type) {
+    if (symnode_get_symbol(symnode)->type != expr_type) {
         error_msg(Status_TypeError, "in assignment");
         return Status_TypeError;
     }
@@ -128,7 +128,7 @@ Status _tyck_return(Visitor v, NodeID s_id) {
         symnode_get_symbol(symtable_get_info(
                                (SymTable)visitor_get_context(v),
                                str_pool_put(visitor_get_strs(v), MAIN_STR)))
-            .type;
+            ->type;
 
     Ast ast = visitor_get_ast(v);
     AstNode *stmt = ast_get_stmt(ast, s_id);
