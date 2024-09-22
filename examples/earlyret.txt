@@ -1,0 +1,7 @@
+int main() {
+    bool b;
+    return 10;
+    return 11;
+    return 12;
+}
+
