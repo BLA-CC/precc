@@ -65,8 +65,11 @@ Status visit_expr(Visitor self, NodeID expr_id) {
     }
 
     AstNode *expr = ast_get_expr(self->ast, expr_id);
-    Status s;
+    if (expr == NULL) {
+        return Status_OK;
+    }
 
+    Status s;
     switch (expr->kind) {
     case AstNodeKind_INT_CONSTANT:
         s = self->visit_int_constant(self, expr_id);
@@ -100,7 +103,6 @@ Status visit_stmt(Visitor self, NodeID stmt_id) {
     }
 
     AstNode *stmt = ast_get_stmt(self->ast, stmt_id);
-
     if (stmt == NULL) {
         return Status_OK;
     }
